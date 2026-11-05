@@ -67,6 +67,12 @@ model Workspace {
   id           String             @id @default(cuid())
   name         String
   createdAt    DateTime           @default(now())
+  // Billing for this company's own UUURAH subscription (Stripe Billing).
+  trialEndsAt        DateTime?
+  stripeCustomerId   String?   @unique
+  subscriptionId     String?
+  subscriptionStatus String?  // trialing | active | past_due | canceled | unpaid | incomplete
+  currentPeriodEnd   DateTime?
   memberships  Membership[]
   connections  Connection[]
   transactions MoneyTransaction[]

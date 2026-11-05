@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as z from "zod/v4";
 import { requireWorkspace } from "@/lib/workspace";
 import { assistantConfigured, runAssistant } from "@/lib/assistant";
+import { workspaceAccess } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -16,6 +17,7 @@ const Body = z.object({
 
 export async function POST(req: Request) {
   const { workspace } = await requireWorkspace();
+  if (!workspaceAccess(workspace).ok) return NextResponse.json({ error: "Subscribe on the Billing page to keep using the assistant." }, { status: 402 });
   if (!assistantConfigured()) return NextResponse.json({ error: "The assistant isn't set up yet. Add ANTHROPIC_API_KEY to the server's settings." }, { status: 503 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });

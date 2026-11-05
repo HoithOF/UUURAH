@@ -153,6 +153,7 @@ export async function deleteCompany(_: FormState, form: FormData): Promise<FormS
   const conns = await db.connection.findMany({ where: { workspaceId: workspace.id } });
   const { liveConnector } = await import("@/connectors/registry");
   await Promise.allSettled(conns.map((c) => liveConnector(c.provider)?.disconnect?.(c, { accessToken: c.accessTokenEnc ? decrypt(c.accessTokenEnc) : undefined })));
+  if (workspace.subscriptionId) await (await import("@/lib/billing")).cancelSubscriptionNow(workspace.subscriptionId);
   const { closeLine } = await import("@/lib/twilio");
   await closeLine(workspace.id).catch(() => undefined);
   await db.$transaction([

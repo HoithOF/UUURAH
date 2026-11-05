@@ -12,6 +12,7 @@ import { issueToken, peekToken, useToken } from "@/lib/auth-tokens";
 import { sendEmail, simpleHtml } from "@/lib/email";
 import { verifyTotp } from "@/lib/totp";
 import { appUrl } from "@/lib/url";
+import { TRIAL_DAYS } from "@/lib/billing";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -46,7 +47,7 @@ export async function signup(_: FormState, form: FormData): Promise<FormState> {
   if (await db.user.findUnique({ where: { email } })) return { error: "An account with that email already exists. Log in instead." };
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await db.user.create({
-    data: { name, email, passwordHash, memberships: { create: { role: "owner", workspace: { create: { name: company } } } } },
+    data: { name, email, passwordHash, memberships: { create: { role: "owner", workspace: { create: { name: company, trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 864e5) } } } } },
   });
   await sendVerifyEmail(user.id, email, name).catch((e) => console.error("verify email failed", e));
   await createSession(user.id);
