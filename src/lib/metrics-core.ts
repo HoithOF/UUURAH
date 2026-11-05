@@ -182,7 +182,7 @@ export function commSignals(waiting: { receivedAt: Date; fromName: string | null
 
 export interface DealLite { name: string; amountCents: number; isClosed: boolean; isWon: boolean; closeDate: Date | null; openedAt: Date; lastActivityAt: Date | null }
 
-export function salesSummary(deals: DealLite[], now = new Date()) {
+export function salesSummary<D extends DealLite>(deals: D[], now = new Date()) {
   const d30 = new Date(now.getTime() - 30 * 864e5);
   const open = deals.filter((d) => !d.isClosed);
   const closed30 = deals.filter((d) => d.isClosed && d.closeDate && d.closeDate >= d30 && d.closeDate <= now);
@@ -201,7 +201,7 @@ export function salesSummary(deals: DealLite[], now = new Date()) {
   };
 }
 
-export function salesSignals(s: ReturnType<typeof salesSummary>, currency = "USD"): Signal[] {
+export function salesSignals(s: ReturnType<typeof salesSummary<DealLite>>, currency = "USD"): Signal[] {
   const out: Signal[] = [];
   if (s.stale.length) {
     const value = s.stale.reduce((t, d) => t + d.amountCents, 0);

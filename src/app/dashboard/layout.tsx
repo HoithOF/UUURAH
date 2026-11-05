@@ -12,6 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="brand">UUURAH</div>
         <div className="ws">{workspace.name}</div>
         <NavLink href="/dashboard">Overview</NavLink>
+        <NavLink href="/dashboard/assistant">Ask</NavLink>
         <div className="navlabel">Your business</div>
         <NavLink href="/dashboard/money">Money</NavLink>
         <NavLink href="/dashboard/marketing">Marketing</NavLink>

@@ -75,6 +75,18 @@ HubSpot: create a public app, add `<APP_URL>/api/connect/hubspot/callback`, and 
 `HUBSPOT_CLIENT_SECRET`. Payroll: create a Merge account, enable the HRIS category and the providers you want,
 and set `MERGE_API_KEY`. Merge is paid per connected company.
 
+## The brain: health view, assistant and MCP
+
+- **Overview** groups every warning by area (money, marketing, communication, sales, people), marks each area critical / needs attention / healthy / not connected, and lists the five things to fix first.
+- **Ask** (`/dashboard/assistant`) is a chat that answers questions from the synced data. It runs Claude (`claude-opus-5-5`, adaptive thinking) with read-only tools from `src/lib/assistant-tools.ts`, each locked to the signed-in workspace. Set `ANTHROPIC_API_KEY` to turn it on. It uses server-side fallback (`fallbacks: "default"`), so if the main model declines a request the API retries on a fallback model in the same call.
+- **MCP** (`POST /api/mcp`) exposes the same tools to an owner's own AI app. An owner or admin creates an access key under Settings > Connect your AI (stored as a sha256 hash, shown once). Example with Claude Code:
+
+  ```
+  claude mcp add --transport http uuurah https://YOUR-SITE/api/mcp --header "Authorization: Bearer uuk_..."
+  ```
+
+  Claude.ai custom connectors expect an OAuth sign-in rather than a key, so that path needs an OAuth layer on top of this endpoint (listed under gaps).
+
 ## Scheduled sync
 
 Apps without webhooks are refreshed by calling `POST /api/cron/sync` with `Authorization: Bearer $CRON_SECRET` every 15 to 30 minutes (Netlify scheduled function or any cron service).
@@ -110,3 +122,5 @@ Adding a new app = one file implementing `LiveConnector`, registered in `src/con
 - Excel files must be saved as CSV first
 - Times on the Communication page are shown in UTC until each user has a time zone setting
 - Reading the Gmail inbox is not built (it needs Google's paid CASA assessment)
+- The MCP endpoint takes access keys, not OAuth, so Claude.ai custom connectors can't use it yet (Claude Code and other header-capable MCP apps can)
+- The assistant doesn't keep chat history between page loads

@@ -116,3 +116,14 @@ input[type=text], input[type=email], input[type=password] { width: 100%; padding
 .area.warning { border-top-color: var(--warn); } .area.warning .dot { background: var(--warn); }
 .area.good { border-top-color: var(--good); } .area.good .dot { background: var(--good); }
 .area.not-connected { opacity: .7; }
+
+/* Assistant */
+.chat { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; max-width: 760px; }
+.starters { display: flex; flex-wrap: wrap; gap: 8px; }
+.turns { display: flex; flex-direction: column; gap: 12px; }
+.turn { display: flex; flex-direction: column; gap: 4px; }
+.turn.user { align-items: flex-end; }
+.turn .bubble { white-space: pre-wrap; line-height: 1.5; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--panel); max-width: 100%; overflow-wrap: anywhere; }
+.turn.user .bubble { background: var(--accent); border-color: var(--accent); color: #fff; max-width: 85%; }
+.ask { display: flex; gap: 8px; align-items: flex-end; position: sticky; bottom: 0; background: var(--bg); padding: 8px 0; }
+.ask textarea { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; resize: vertical; }
