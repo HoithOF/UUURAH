@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/dates";
 import { requireWorkspace } from "@/lib/workspace";
 import { salesSnapshot } from "@/lib/sales-people";
 import { formatMoney } from "@/lib/metrics-core";
@@ -8,7 +9,7 @@ import { EmptySection } from "@/components/EmptySection";
 const daysSince = (d: Date) => Math.floor((Date.now() - d.getTime()) / 864e5);
 
 export default async function SalesPage() {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user } = await requireWorkspace();
   const s = await salesSnapshot(workspace.id);
   if (!s.hasData) return <EmptySection section="sales" intro="Every deal and every follow-up you owe, from your CRM." cta="Connect your CRM" />;
   const c = s.currency;
@@ -37,7 +38,7 @@ export default async function SalesPage() {
               <tr key={d.id}>
                 <td>{d.webLink ? <a href={d.webLink} target="_blank" rel="noopener noreferrer">{d.name}</a> : d.name}</td>
                 <td>{d.stage}</td>
-                <td className={d.closeDate && d.closeDate < new Date() ? "down" : ""}>{d.closeDate ? d.closeDate.toISOString().slice(0, 10) : "-"}</td>
+                <td className={d.closeDate && d.closeDate < new Date() ? "down" : ""}>{d.closeDate ? fmtDate(d.closeDate, user.timeZone) : "-"}</td>
                 <td className={`num ${cold ? "down" : ""}`}>{daysSince(touched)} days ago</td>
                 <td className="num">{formatMoney(d.amountCents, d.currency)}</td>
               </tr>

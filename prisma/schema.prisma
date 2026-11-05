@@ -88,6 +88,7 @@ model Workspace {
   phoneLine    PhoneLine?
   texts        TextMessage[]
   calls        CallLog[]
+  chats        AssistantChat[]
 }
 
 // role: "owner" | "admin" | "member"
@@ -407,4 +408,29 @@ model CallLog {
   createdAt    DateTime  @default(now())
 
   @@index([workspaceId, createdAt])
+}
+
+// Saved conversations with the assistant. Private to the person who had them.
+model AssistantChat {
+  id          String             @id @default(cuid())
+  workspaceId String
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  title       String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  messages    AssistantMessage[]
+
+  @@index([workspaceId, userId, updatedAt])
+}
+
+model AssistantMessage {
+  id        String        @id @default(cuid())
+  chatId    String
+  chat      AssistantChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  role      String // user | assistant
+  content   String
+  createdAt DateTime      @default(now())
+
+  @@index([chatId, createdAt])
 }

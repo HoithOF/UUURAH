@@ -84,6 +84,14 @@ and set `MERGE_API_KEY`. Merge is paid per connected company.
 - All one-time links store only a sha256 of the token (`AuthToken` table).
 - Email goes through Resend (`RESEND_API_KEY`, `EMAIL_FROM`). In development, or with `EMAIL_TRANSPORT=log`, emails are printed to the server log.
 
+## Getting the numbers right
+
+- **No double counting.** When apps overlap, each kind of money comes from one place: sales, refunds and fees from the payment app (Stripe, Square) if there is one, otherwise accounting, otherwise the bank; spending from accounting (QuickBooks, Xero) if there is one, otherwise the bank. Spreadsheet uploads always count. The Money page says which apps it used (`src/lib/money-sources.ts`).
+- **One currency.** Totals use the currency most of the money is in; anything in other currencies is left out and the Money page says how many.
+- **Time zones.** Each person picks theirs in Settings; every date and time, and alert timing, follows it.
+- **Excel.** `.xlsx` files import directly (first sheet with data), as well as CSV.
+- **Saved chats.** Ask keeps each person's conversations; history is read from the database, not the browser.
+
 ## Alerts, phone and billing
 
 - **Alerts:** each person picks daily (only when something needs attention), weekly (Monday summary) or off, per company, in Settings. Emails go out around 7am in their time zone via the hourly job (`/api/cron/alerts`). Only confirmed emails get alerts.
@@ -138,10 +146,5 @@ Adding a new app = one file implementing `LiveConnector`, registered in `src/con
 
 ## Known gaps (next)
 
-- Mixed currencies are summed as if they were one currency
-- QuickBooks + Stripe can double count the same sale
-- Excel files must be saved as CSV first
-- Times on the Communication page are shown in UTC until each user has a time zone setting
 - Reading the Gmail inbox is not built (it needs Google's paid CASA assessment)
 - The MCP endpoint takes access keys, not OAuth, so Claude.ai custom connectors can't use it yet (Claude Code and other header-capable MCP apps can)
-- The assistant doesn't keep chat history between page loads

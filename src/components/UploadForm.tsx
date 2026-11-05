@@ -7,7 +7,7 @@ export function UploadForm() {
   const [state, action, pending] = useActionState<UploadState, FormData>(uploadCsv, undefined);
   return (
     <form action={action} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-      <input type="file" name="file" accept=".csv,text/csv" required aria-label="CSV file" />
+      <input type="file" name="file" accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required aria-label="Spreadsheet file" />
       <select name="currency" defaultValue="USD" aria-label="Currency" className="btn">
         {["USD", "CAD", "EUR", "GBP", "AUD"].map((c) => <option key={c}>{c}</option>)}
       </select>

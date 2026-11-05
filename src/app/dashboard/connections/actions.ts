@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/workspace";
 import { runSync, saveMoney } from "@/lib/sync";
+import { xlsxToCsv } from "@/connectors/xlsx-read";
 import { parseMoneyCsv } from "@/connectors/csv-parse";
 import { liveConnector } from "@/connectors/registry";
 import { decrypt } from "@/lib/crypto";
@@ -17,11 +18,12 @@ export async function uploadCsv(_: UploadState, form: FormData): Promise<UploadS
   const currency = String(form.get("currency") || "USD").toUpperCase().slice(0, 3);
   if (!(file instanceof File) || file.size === 0) return { error: "Choose a file first." };
   if (file.size > MAX_BYTES) return { error: "That file is over 5 MB. Split it into smaller files." };
-  if (/\.xlsx?$/i.test(file.name)) return { error: "Excel files need to be saved as CSV first: File > Save As > CSV. Direct Excel import is coming." };
+  if (/\.xls$/i.test(file.name)) return { error: "That's the old Excel format. Open it in Excel and save it as .xlsx or .csv first." };
 
   let parsed;
   try {
-    parsed = parseMoneyCsv(await file.text(), file.name);
+    const text = /\.xlsx$/i.test(file.name) ? await xlsxToCsv(await file.arrayBuffer()) : await file.text();
+    parsed = parseMoneyCsv(text, file.name);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Couldn't read that file." };
   }

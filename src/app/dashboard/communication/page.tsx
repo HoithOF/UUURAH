@@ -14,11 +14,12 @@ function when(d: Date) {
   const days = Math.floor(h / 24);
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
-const time = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
-const dayLabel = (d: Date) => d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 
 export default async function CommunicationPage() {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user } = await requireWorkspace();
+  const time = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: user.timeZone });
+  // All-day events are stored as UTC midnight of their date, so they're labeled in UTC to keep the right day.
+  const dayLabel = (d: Date, allDay = false) => d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: allDay ? "UTC" : user.timeZone });
   const c = await commSnapshot(workspace.id);
   const senders = await db.connection.findMany({ where: { workspaceId: workspace.id, provider: { in: ["outlook", "google-calendar"] }, status: { not: "disconnected" } }, select: { id: true, displayName: true } });
 
@@ -41,14 +42,14 @@ export default async function CommunicationPage() {
 
   const byDay = new Map<string, typeof c.events>();
   for (const e of c.events) {
-    const k = dayLabel(e.startsAt);
+    const k = dayLabel(e.startsAt, e.allDay);
     byDay.set(k, [...(byDay.get(k) ?? []), e]);
   }
 
   return (
     <>
       <h1>Communication</h1>
-      <p className="muted">Times are shown in UTC for now.</p>
+      <p className="muted">Times are in {user.timeZone.replace(/_/g, " ")}. <Link href="/dashboard/settings">Change</Link></p>
       {c.signals.length > 0 && (<><h2>Signals</h2><Signals signals={c.signals} /></>)}
 
       <h2>Waiting for your reply ({c.waiting.length})</h2>
