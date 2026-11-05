@@ -2,7 +2,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// SQLite for local development. Change to "postgresql" for production.
+// SQLite locally, Postgres in production: scripts/prisma-provider.mjs sets this from DATABASE_URL at build time.
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")

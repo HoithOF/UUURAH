@@ -61,6 +61,13 @@ export async function disconnect(form: FormData) {
   } catch {
     // Already revoked on their side; still forget it on ours.
   }
-  await db.connection.update({ where: { id: c.id }, data: { status: "disconnected", accessTokenEnc: null, refreshTokenEnc: null } });
+  // Forget the connection and everything synced from it. Most tables cascade; these three keep
+  // rows on connection delete (for uploads), so clear them explicitly.
+  await db.$transaction([
+    db.moneyTransaction.deleteMany({ where: { connectionId: c.id } }),
+    db.invoice.deleteMany({ where: { connectionId: c.id } }),
+    db.adMetric.deleteMany({ where: { connectionId: c.id } }),
+    db.connection.delete({ where: { id: c.id } }),
+  ]);
   revalidatePath("/dashboard", "layout");
 }

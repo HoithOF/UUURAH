@@ -4,7 +4,7 @@ import { appUrl } from "@/lib/url";
 import { AccessKeyForm } from "@/components/AccessKeyForm";
 import { SimpleForm } from "@/components/SimpleForm";
 import { TwoStepSetup } from "@/components/TwoStepSetup";
-import { changePassword, changeRole, disableTwoStep, inviteMember, removeMember, revokeInvite, revokeKey, setTimeZone, signOutOthers } from "./actions";
+import { changePassword, changeRole, deleteCompany, deleteMyAccount, transferOwnership, disableTwoStep, inviteMember, removeMember, revokeInvite, revokeKey, setTimeZone, signOutOthers } from "./actions";
 
 const ZONES = ["UTC", ...Intl.supportedValuesOf("timeZone")];
 
@@ -128,6 +128,37 @@ export default async function SettingsPage() {
         </table>
       )}
       {manage ? <AccessKeyForm /> : <p className="small muted">Ask an owner or admin to create a key.</p>}
+      <h2>Danger zone</h2>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start" }}>
+        {role === "owner" && members.length > 1 && (
+          <SimpleForm action={transferOwnership} submit="Make them the owner" className="card">
+            <div style={{ fontWeight: 600 }}>Hand over ownership</div>
+            <label htmlFor="newowner">New owner</label>
+            <select id="newowner" name="membershipId" className="btn" style={{ width: "100%" }}>
+              {members.filter((m) => m.userId !== user.id).map((m) => <option key={m.id} value={m.id}>{m.user.name}</option>)}
+            </select>
+            <label htmlFor="pwt">Your password</label>
+            <input id="pwt" name="password" type="password" autoComplete="current-password" required />
+          </SimpleForm>
+        )}
+        {role === "owner" && (
+          <SimpleForm action={deleteCompany} submit="Delete this company" className="card danger">
+            <div style={{ fontWeight: 600 }}>Delete {workspace.name}</div>
+            <p className="small">Deletes every connection, every synced record and every team membership. This can&apos;t be undone.</p>
+            <label htmlFor="confirmname">Type the company name to confirm</label>
+            <input id="confirmname" name="confirm" type="text" autoComplete="off" required />
+            <label htmlFor="pwd">Your password</label>
+            <input id="pwd" name="password" type="password" autoComplete="current-password" required />
+          </SimpleForm>
+        )}
+        <SimpleForm action={deleteMyAccount} submit="Delete my account" className="card danger">
+          <div style={{ fontWeight: 600 }}>Delete my login</div>
+          <p className="small">Removes you from every company. Owners must hand over or delete their company first.</p>
+          <label htmlFor="pwa">Your password</label>
+          <input id="pwa" name="password" type="password" autoComplete="current-password" required />
+        </SimpleForm>
+      </div>
+
       <h2>Security</h2>
       <ul className="small">
         <li>Passwords are hashed with bcrypt; we never store them in readable form.</li>

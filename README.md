@@ -102,8 +102,15 @@ Apps without webhooks are refreshed by calling `POST /api/cron/sync` with `Autho
 
 ## Production
 
-- Switch `provider` in `prisma/schema.prisma` to `postgresql` and point `DATABASE_URL` at Postgres (Supabase works).
-- Set `APP_URL` to the public URL, and a strong `ENCRYPTION_KEY` that never changes.
+Deploys to Netlify with `netlify.toml`:
+
+1. Create a Postgres database (Netlify DB, Neon or Supabase) and set `DATABASE_URL` to it. The build switches Prisma to Postgres automatically and creates the tables.
+2. Set `APP_URL` (the public https address), `ENCRYPTION_KEY` (`openssl rand -base64 32`, never change it), `CRON_SECRET` (any long random string), and `RESEND_API_KEY` + `EMAIL_FROM`.
+3. Fill in `SITE_NAME`, `COMPANY_LEGAL_NAME`, `CONTACT_EMAIL`, `COMPANY_ADDRESS` and `GOVERNING_LAW` for the legal pages, and set `LEGAL_REVIEWED=true` once a lawyer has checked them.
+4. Add each app's keys from `.env.example` as you register them. Every app's redirect URL is `APP_URL/api/connect/<app>/callback`.
+5. `netlify/functions/scheduled.mts` runs hourly: it refreshes apps and sends alerts.
+
+The privacy policy (`/privacy`), terms (`/terms`) and data deletion page (`/data-deletion`) are the URLs Google, Meta and Intuit ask for during app review.
 
 ## Layout
 

@@ -26,6 +26,8 @@ const tool = <S extends z.ZodObject>(t: AssistantTool<S>) => t as unknown as Ass
 const day = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : null);
 const money = (cents: number, currency = "USD") => formatMoney(cents, currency);
 const pct = (x: number | null) => (x === null ? null : `${Math.round(x * 100)}%`);
+// Postgres string matching is case-sensitive unless asked; SQLite's is already case-insensitive for ASCII.
+const ci = (process.env.DATABASE_URL ?? "").startsWith("postgres") ? ({ mode: "insensitive" } as const) : {};
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
 export const assistantTools: AssistantTool[] = [
@@ -78,7 +80,7 @@ export const assistantTools: AssistantTool[] = [
         workspaceId: ws,
         ...(i.kind ? { kind: i.kind } : {}),
         ...(i.from || i.to ? { occurredAt: { ...(i.from ? { gte: new Date(i.from) } : {}), ...(i.to ? { lt: new Date(new Date(i.to).getTime() + 864e5) } : {}) } } : {}),
-        ...(i.text ? { OR: [{ description: { contains: i.text } }, { category: { contains: i.text } }] } : {}),
+        ...(i.text ? { OR: [{ description: { contains: i.text, ...ci } }, { category: { contains: i.text, ...ci } }] } : {}),
       };
       const [rows, agg] = await Promise.all([
         db.moneyTransaction.findMany({ where, orderBy: { occurredAt: "desc" }, take: i.limit }),
