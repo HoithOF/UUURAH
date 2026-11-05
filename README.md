@@ -75,6 +75,15 @@ HubSpot: create a public app, add `<APP_URL>/api/connect/hubspot/callback`, and 
 `HUBSPOT_CLIENT_SECRET`. Payroll: create a Merge account, enable the HRIS category and the providers you want,
 and set `MERGE_API_KEY`. Merge is paid per connected company.
 
+## Accounts and security
+
+- Sign up, log in, password reset by email (1-hour single-use link; signs out every device), email confirmation, change password.
+- Team invites by email (7-day single-use link), roles (owner / admin / member), change role, remove member, switch between companies.
+- Two-step login with any authenticator app (RFC 6238, tested against the RFC vectors) and 8 single-use recovery codes.
+- Login, signup, reset and invite limits per email and per IP (`RateHit` table).
+- All one-time links store only a sha256 of the token (`AuthToken` table).
+- Email goes through Resend (`RESEND_API_KEY`, `EMAIL_FROM`). In development, or with `EMAIL_TRANSPORT=log`, emails are printed to the server log.
+
 ## The brain: health view, assistant and MCP
 
 - **Overview** groups every warning by area (money, marketing, communication, sales, people), marks each area critical / needs attention / healthy / not connected, and lists the five things to fix first.
@@ -118,7 +127,6 @@ Adding a new app = one file implementing `LiveConnector`, registered in `src/con
 
 - Mixed currencies are summed as if they were one currency
 - QuickBooks + Stripe can double count the same sale
-- No login rate limiting, password reset, or team invites yet (need an email provider)
 - Excel files must be saved as CSV first
 - Times on the Communication page are shown in UTC until each user has a time zone setting
 - Reading the Gmail inbox is not built (it needs Google's paid CASA assessment)

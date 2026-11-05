@@ -14,8 +14,43 @@ model User {
   name         String
   passwordHash String
   createdAt    DateTime     @default(now())
+  emailVerifiedAt DateTime?
+  // IANA zone, e.g. "America/Chicago". Used for every date shown to this user.
+  timeZone     String       @default("America/New_York")
+  // Two-step login (TOTP). The secret is AES-GCM encrypted; recovery codes are a JSON array of sha256 hashes.
+  totpSecretEnc String?
+  totpEnabledAt DateTime?
+  recoveryCodes String?
   sessions     Session[]
   memberships  Membership[]
+}
+
+// One-time links sent by email: password reset, email verification, team invites.
+// Only the sha256 of the token is stored.
+model AuthToken {
+  id          String    @id @default(cuid())
+  kind        String // reset | verify | invite
+  tokenHash   String    @unique
+  email       String
+  userId      String?
+  workspaceId String?
+  role        String?
+  invitedById String?
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([kind, email])
+  @@index([workspaceId])
+}
+
+// Sliding-window counters for login, signup and email-sending limits.
+model RateHit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
 }
 
 model Session {

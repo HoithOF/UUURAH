@@ -40,3 +40,9 @@ export async function destroySession() {
   if (token) await db.session.deleteMany({ where: { tokenHash: sha256(token) } });
   jar.delete(SESSION_COOKIE);
 }
+
+/** Signs the user out everywhere except this browser. */
+export async function destroyOtherSessions(userId: string) {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  await db.session.deleteMany({ where: { userId, ...(token ? { NOT: { tokenHash: sha256(token) } } : {}) } });
+}
