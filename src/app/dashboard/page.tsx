@@ -7,7 +7,8 @@ import { commSnapshot } from "@/lib/communication";
 import { peopleSnapshot, salesSnapshot } from "@/lib/sales-people";
 import { Signals } from "@/components/Signals";
 import { Stat } from "@/components/Stat";
-import type { Signal } from "@/lib/metrics-core";
+import { areaHealth, type Signal } from "@/lib/metrics-core";
+import { HealthGrid } from "@/components/HealthGrid";
 
 export default async function Overview() {
   const { workspace, user } = await requireWorkspace();
@@ -28,6 +29,14 @@ export default async function Overview() {
   const rank = { critical: 0, warning: 1, good: 2 } as const;
   signals.sort((a, b) => rank[a.severity] - rank[b.severity]);
   const shown = signals.some((s) => s.severity !== "good") ? signals.filter((s) => s.severity !== "good") : signals;
+  const has = (ids: string[]) => connections.some((c) => ids.includes(c.provider));
+  const areas = areaHealth(signals, {
+    money: has(["stripe", "square", "quickbooks", "xero", "plaid", "csv"]),
+    marketing: has(["google-ads", "meta-ads"]),
+    communication: has(["outlook", "google-calendar"]),
+    sales: has(["hubspot"]),
+    people: has(["merge-hris"]),
+  });
 
   return (
     <>
@@ -42,8 +51,11 @@ export default async function Overview() {
         </div>
       ) : (
         <>
-          <h2>Where you need to look</h2>
-          <Signals signals={shown} />
+          <h2>Your business at a glance</h2>
+          <HealthGrid areas={areas} />
+          <h2>Fix these first</h2>
+          <Signals signals={shown.slice(0, 5)} />
+          {shown.length > 5 && <p className="small muted">{shown.length - 5} more on the section pages.</p>}
           <h2>Money</h2>
           <div className="grid">
             <Stat label="Sales" cents={money.cur.sales} prevCents={money.prev.sales} currency={money.currency} />

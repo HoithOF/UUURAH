@@ -234,3 +234,16 @@ export function peopleSignals(p: ReturnType<typeof peopleSummary>): Signal[] {
     out.push({ severity: "warning", section: "people", title: `Payroll up ${Math.round(payUp)}% while sales ${salesUp === null ? "are flat" : salesUp >= 0 ? `grew ${Math.round(salesUp)}%` : `fell ${Math.abs(Math.round(salesUp))}%`}`, detail: "Labor cost is growing faster than the money coming in." });
   return out;
 }
+
+export type AreaStatus = "critical" | "warning" | "good" | "not-connected";
+
+// One tile per area of the business: its worst signal decides its colour.
+export function areaHealth(signals: Signal[], connected: Record<string, boolean>) {
+  const areas = ["money", "marketing", "communication", "sales", "people"] as const;
+  return areas.map((area) => {
+    const mine = signals.filter((s) => s.section === area);
+    const worst = mine.find((s) => s.severity === "critical") ?? mine.find((s) => s.severity === "warning");
+    const status: AreaStatus = !connected[area] ? "not-connected" : worst ? worst.severity : "good";
+    return { area, status, issues: mine.filter((s) => s.severity !== "good").length, headline: worst?.title ?? (connected[area] ? "Looks healthy" : "Not connected yet") };
+  });
+}

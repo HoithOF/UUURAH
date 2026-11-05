@@ -105,3 +105,14 @@ input[type=text], input[type=email], input[type=password] { width: 100%; padding
   .navlabel, .sidebar .spacer { display: none; }
   .main { padding: 20px 16px 48px; }
 }
+
+.health { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.area { color: var(--text); display: block; border-top: 4px solid var(--border); }
+.area:hover { text-decoration: none; border-color: var(--muted); }
+.area-top { display: flex; align-items: center; gap: 8px; font-weight: 650; }
+.area .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+.area-status { font-size: 13px; color: var(--muted); margin: 2px 0 6px; }
+.area.critical { border-top-color: var(--bad); } .area.critical .dot { background: var(--bad); }
+.area.warning { border-top-color: var(--warn); } .area.warning .dot { background: var(--warn); }
+.area.good { border-top-color: var(--good); } .area.good .dot { background: var(--good); }
+.area.not-connected { opacity: .7; }
