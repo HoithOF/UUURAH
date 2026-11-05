@@ -153,6 +153,9 @@ export async function deleteCompany(_: FormState, form: FormData): Promise<FormS
   const conns = await db.connection.findMany({ where: { workspaceId: workspace.id } });
   const { liveConnector } = await import("@/connectors/registry");
   await Promise.allSettled(conns.map((c) => liveConnector(c.provider)?.disconnect?.(c, { accessToken: c.accessTokenEnc ? decrypt(c.accessTokenEnc) : undefined })));
+  if (workspace.subscriptionId) await (await import("@/lib/billing")).cancelSubscriptionNow(workspace.subscriptionId);
+  const { closeLine } = await import("@/lib/twilio");
+  await closeLine(workspace.id).catch(() => undefined);
   await db.$transaction([
     db.moneyTransaction.deleteMany({ where: { workspaceId: workspace.id } }),
     db.invoice.deleteMany({ where: { workspaceId: workspace.id } }),
@@ -192,4 +195,12 @@ export async function transferOwnership(_: FormState, form: FormData): Promise<F
   ]);
   revalidatePath("/dashboard", "layout");
   return { ok: "Ownership moved. You're now an admin." };
+}
+
+export async function setAlerts(_: FormState, form: FormData): Promise<FormState> {
+  const { user, workspace } = await requireWorkspace();
+  const freq = z.enum(["off", "daily", "weekly"]).safeParse(form.get("frequency"));
+  if (!freq.success) return { error: "Pick how often." };
+  await db.membership.update({ where: { userId_workspaceId: { userId: user.id, workspaceId: workspace.id } }, data: { alertFrequency: freq.data } });
+  return { ok: freq.data === "off" ? "Alerts are off." : `Saved. ${freq.data === "daily" ? "Each morning when something needs attention." : "Every Monday morning."}` };
 }

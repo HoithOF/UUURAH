@@ -67,6 +67,12 @@ model Workspace {
   id           String             @id @default(cuid())
   name         String
   createdAt    DateTime           @default(now())
+  // Billing for this company's own UUURAH subscription (Stripe Billing).
+  trialEndsAt        DateTime?
+  stripeCustomerId   String?   @unique
+  subscriptionId     String?
+  subscriptionStatus String?  // trialing | active | past_due | canceled | unpaid | incomplete
+  currentPeriodEnd   DateTime?
   memberships  Membership[]
   connections  Connection[]
   transactions MoneyTransaction[]
@@ -79,6 +85,9 @@ model Workspace {
   employees    Employee[]
   oauthStates  OAuthState[]
   accessKeys   AccessKey[]
+  phoneLine    PhoneLine?
+  texts        TextMessage[]
+  calls        CallLog[]
 }
 
 // role: "owner" | "admin" | "member"
@@ -87,6 +96,9 @@ model Membership {
   userId      String
   workspaceId String
   role        String
+  // Email alerts about this company: off | daily | weekly.
+  alertFrequency  String    @default("weekly")
+  alertLastSentAt DateTime?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
@@ -349,4 +361,50 @@ model AccessKey {
   revokedAt   DateTime?
 
   @@index([workspaceId])
+}
+
+// The company's business phone number. Runs in its own Twilio subaccount under the platform's Twilio account.
+model PhoneLine {
+  id              String    @id @default(cuid())
+  workspaceId     String    @unique
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  subaccountSid   String    @unique
+  authTokenEnc    String
+  apiKeySid       String?
+  apiKeySecretEnc String?
+  appSid          String?
+  number          String?
+  numberSid       String?
+  createdAt       DateTime  @default(now())
+}
+
+model TextMessage {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sid         String    @unique
+  direction   String // inbound | outbound
+  other       String // the customer's number, E.164
+  body        String
+  status      String
+  sentById    String?
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+
+  @@index([workspaceId, other, createdAt])
+}
+
+model CallLog {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sid          String    @unique
+  direction    String // inbound | outbound
+  other        String
+  status       String // ringing | in-progress | completed | no-answer | busy | failed | voicemail
+  durationSec  Int?
+  recordingUrl String?
+  createdAt    DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
 }

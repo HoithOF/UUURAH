@@ -93,7 +93,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .auth { max-width: 380px; margin: 10vh auto; padding: 0 16px; }
 label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 4px; }
-input[type=text], input[type=email], input[type=password] { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; }
+input[type=text], input[type=email], input[type=password], input[type=tel], input:not([type]) { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; }
 .error { background: var(--bad-soft); color: var(--bad); padding: 8px 12px; border-radius: 8px; font-size: 14px; margin: 12px 0; }
 .notice { background: var(--accent-soft); padding: 8px 12px; border-radius: 8px; font-size: 14px; margin: 12px 0; }
 
@@ -148,3 +148,16 @@ input[type=text], input[type=email], input[type=password] { width: 100%; padding
 .legal { max-width: 720px; padding-bottom: 20px; }
 .legal li { margin-bottom: 6px; }
 .card.danger { border-color: var(--bad-soft); } .card.danger .btn.primary { background: var(--bad); border-color: var(--bad); }
+
+/* Phone */
+.phone-grid { display: grid; grid-template-columns: minmax(260px, 320px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .phone-grid { grid-template-columns: 1fr; } }
+.phone .dialnum { display: block; width: 100%; font-size: 22px; text-align: center; padding: 10px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-weight: 600; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.keypad .btn { justify-content: center; font-size: 18px; padding: 10px; }
+.btn.end { background: var(--bad); border-color: var(--bad); color: #fff; }
+.thread { border-top: 1px solid var(--border); padding: 12px 0; }
+.bubbles { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.sms { max-width: 75%; padding: 6px 10px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sms.out { align-self: flex-end; background: var(--accent); border-color: var(--accent); color: #fff; }
+.textbox input { margin: 0; }

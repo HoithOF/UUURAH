@@ -8,7 +8,9 @@ export function middleware(req: NextRequest) {
     url.search = "";
     return NextResponse.redirect(url);
   }
-  return NextResponse.next();
+  const headers = new Headers(req.headers);
+  headers.set("x-pathname", req.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = { matcher: ["/dashboard/:path*"] };

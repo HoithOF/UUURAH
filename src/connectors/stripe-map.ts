@@ -59,5 +59,5 @@ export function verifyStripeWebhook(payload: string, header: string | null, secr
     return b.length === expected.length && timingSafeEqual(b, expected);
   });
   if (!ok) throw new Error("Webhook signature mismatch");
-  return JSON.parse(payload) as { id: string; type: string; account?: string; data: unknown };
+  return JSON.parse(payload) as { id: string; type: string; account?: string; data: { object: unknown } };
 }

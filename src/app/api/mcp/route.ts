@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as z from "zod/v4";
 import { workspaceForKey } from "@/lib/access-keys";
 import { assistantTools, runAssistantTool } from "@/lib/assistant-tools";
+import { workspaceAccess } from "@/lib/billing";
 
 /**
  * A small, stateless MCP server (Streamable HTTP transport, JSON responses).
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
   if (!workspace)
     return NextResponse.json({ error: "Missing or invalid access key. Create one under Settings > Connect your AI." }, { status: 401, headers: { "www-authenticate": 'Bearer realm="uuurah"' } });
 
+  if (!workspaceAccess(workspace).ok) return NextResponse.json({ error: "This company's subscription has ended." }, { status: 402 });
   const msg = (await req.json().catch(() => null)) as RpcRequest | null;
   if (!msg || Array.isArray(msg) || msg.jsonrpc !== "2.0" || typeof msg.method !== "string") return fail(null, -32600, "Invalid request", 400);
   // Notifications (no id) need no answer.

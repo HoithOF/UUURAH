@@ -84,6 +84,12 @@ and set `MERGE_API_KEY`. Merge is paid per connected company.
 - All one-time links store only a sha256 of the token (`AuthToken` table).
 - Email goes through Resend (`RESEND_API_KEY`, `EMAIL_FROM`). In development, or with `EMAIL_TRANSPORT=log`, emails are printed to the server log.
 
+## Alerts, phone and billing
+
+- **Alerts:** each person picks daily (only when something needs attention), weekly (Monday summary) or off, per company, in Settings. Emails go out around 7am in their time zone via the hourly job (`/api/cron/alerts`). Only confirmed emails get alerts.
+- **Phone:** set `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` (the platform's Twilio account). Each company gets its own Twilio subaccount and picks a local number by area code. Calls are placed and answered in the browser (Twilio Voice SDK); incoming calls ring everyone on the team who has the Phone page open, then go to voicemail after 20 seconds. Two-way texting is threaded by customer. Every webhook is checked against the company's own subaccount signature, and voicemails stream through the app. Texting US numbers needs a one-time A2P 10DLC brand and campaign registration in Twilio.
+- **Billing:** set `STRIPE_BILLING_PRICE_ID` (a recurring price in your Stripe account) and `STRIPE_BILLING_WEBHOOK_SECRET` (endpoint `APP_URL/api/webhooks/billing`, events `checkout.session.completed` and `customer.subscription.*`). New companies get a `TRIAL_DAYS` free trial with no card. After it, or 7 days after a failed renewal, the dashboard, assistant and MCP ask the owner to subscribe; Settings and Billing stay open and no data is deleted. Leave the price empty and everything stays free.
+
 ## The brain: health view, assistant and MCP
 
 - **Overview** groups every warning by area (money, marketing, communication, sales, people), marks each area critical / needs attention / healthy / not connected, and lists the five things to fix first.
