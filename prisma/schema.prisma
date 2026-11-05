@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// SQLite for local development. Change to "postgresql" for production.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  sessions     Session[]
+  memberships  Membership[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// A company. Every piece of business data belongs to exactly one workspace.
+model Workspace {
+  id           String             @id @default(cuid())
+  name         String
+  createdAt    DateTime           @default(now())
+  memberships  Membership[]
+  connections  Connection[]
+  transactions MoneyTransaction[]
+  oauthStates  OAuthState[]
+}
+
+// role: "owner" | "admin" | "member"
+model Membership {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, workspaceId])
+}
+
+// One connected outside account (a Stripe account, a Google login, a file-upload source).
+// Tokens are AES-256-GCM encrypted; plaintext tokens never touch the database.
+model Connection {
+  id                String     @id @default(cuid())
+  workspaceId       String
+  workspace         Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  provider          String
+  externalAccountId String
+  displayName       String
+  status            String     @default("connected") // connected | error | disconnected
+  accessTokenEnc    String?
+  refreshTokenEnc   String?
+  tokenExpiresAt    DateTime?
+  scopes            String?
+  lastSyncedAt      DateTime?
+  lastError         String?
+  createdAt         DateTime   @default(now())
+  syncRuns          SyncRun[]
+  transactions      MoneyTransaction[]
+
+  @@unique([workspaceId, provider, externalAccountId])
+  @@index([provider, externalAccountId])
+}
+
+model SyncRun {
+  id           String     @id @default(cuid())
+  connectionId String
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  trigger      String // manual | webhook | schedule | upload
+  status       String // running | success | error
+  itemsSynced  Int        @default(0)
+  error        String?
+  startedAt    DateTime   @default(now())
+  finishedAt   DateTime?
+}
+
+// The shared money format: Stripe, Square, QuickBooks and spreadsheets all land here.
+// kind: "sale" | "refund" | "fee" | "expense" | "payout"
+// amountCents: positive = money in, negative = money out.
+model MoneyTransaction {
+  id           String      @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId String?
+  connection   Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  source       String
+  externalId   String
+  kind         String
+  amountCents  Int
+  currency     String
+  occurredAt   DateTime
+  description  String?
+  category     String?
+
+  @@unique([workspaceId, source, externalId])
+  @@index([workspaceId, occurredAt])
+}
+
+// Short-lived CSRF state for OAuth sign-in round trips.
+model OAuthState {
+  state       String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  provider    String
+  createdAt   DateTime  @default(now())
+}
