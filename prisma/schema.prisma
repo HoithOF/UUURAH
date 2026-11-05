@@ -36,6 +36,7 @@ model Workspace {
   connections  Connection[]
   transactions MoneyTransaction[]
   invoices     Invoice[]
+  adMetrics    AdMetric[]
   oauthStates  OAuthState[]
 }
 
@@ -74,6 +75,7 @@ model Connection {
   transactions      MoneyTransaction[]
   invoices          Invoice[]
   balances          AccountBalance[]
+  adMetrics         AdMetric[]
 
   @@unique([workspaceId, provider, externalAccountId])
   @@index([provider, externalAccountId])
@@ -160,4 +162,26 @@ model AccountBalance {
   updatedAt    DateTime   @updatedAt
 
   @@unique([connectionId, accountId])
+}
+
+// One campaign's results on one day, from any ad platform.
+model AdMetric {
+  id                   String      @id @default(cuid())
+  workspaceId          String
+  workspace            Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId         String?
+  connection           Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  source               String
+  campaignId           String
+  campaignName         String
+  date                 DateTime
+  spendCents           Int
+  impressions          Int
+  clicks               Int
+  conversions          Float
+  conversionValueCents Int
+  currency             String
+
+  @@unique([workspaceId, source, campaignId, date])
+  @@index([workspaceId, date])
 }

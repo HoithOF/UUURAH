@@ -43,8 +43,21 @@ export interface MappedBalance {
   currency: string;
 }
 
+export interface MappedAdDay {
+  campaignId: string;
+  campaignName: string;
+  date: Date; // UTC midnight of the ad account's reporting day
+  spendCents: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  conversionValueCents: number;
+  currency: string;
+}
+
 export interface SyncResult {
   money: MappedMoney[];
+  ads?: MappedAdDay[];
   invoices?: MappedInvoice[];
   balances?: MappedBalance[];
   // Money rows the app says were deleted on its side.

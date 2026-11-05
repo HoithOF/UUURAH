@@ -23,8 +23,8 @@ export const CATALOG: CatalogEntry[] = [
   { id: "plaid", name: "Bank accounts (Plaid)", section: "money", method: "unified-api", wave: 1, available: true, blurb: "Balances, transactions and cash runway." },
   { id: "google-sheets", name: "Google Sheets", section: "money", method: "oauth", wave: 1, available: false, blurb: "Spreadsheets that stay up to date on their own." },
 
-  { id: "google-ads", name: "Google Ads", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Spend, clicks, leads and return on ad spend." },
-  { id: "meta-ads", name: "Meta Ads", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Facebook and Instagram ad spend and results." },
+  { id: "google-ads", name: "Google Ads", section: "marketing", method: "oauth", wave: 2, available: true, blurb: "Spend, clicks, conversions and return on ad spend by campaign." },
+  { id: "meta-ads", name: "Meta Ads", section: "marketing", method: "oauth", wave: 2, available: true, blurb: "Facebook and Instagram ad spend, purchases and leads by campaign." },
   { id: "tiktok-ads", name: "TikTok Ads", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Spend, views and conversions." },
   { id: "social-organic", name: "Organic social", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Followers, reach and top posts across Instagram, TikTok and YouTube." },
   { id: "ga4", name: "Google Analytics", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Website visitors, sources and conversions." },
