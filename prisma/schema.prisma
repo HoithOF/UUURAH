@@ -43,6 +43,7 @@ model Workspace {
   payrollRuns  PayrollRun[]
   employees    Employee[]
   oauthStates  OAuthState[]
+  accessKeys   AccessKey[]
 }
 
 // role: "owner" | "admin" | "member"
@@ -296,4 +297,21 @@ model Employee {
   endedAt      DateTime?
 
   @@unique([connectionId, externalId])
+}
+
+// A key that lets an outside AI app (Claude, ChatGPT, etc.) read this workspace through /api/mcp.
+// Only the sha256 of the key is stored; the key itself is shown once when created.
+model AccessKey {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  name        String
+  keyHash     String    @unique
+  lastFour    String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  @@index([workspaceId])
 }

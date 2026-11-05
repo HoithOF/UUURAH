@@ -1,33 +1,13 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/workspace";
-import { moneySnapshot } from "@/lib/metrics";
-import { marketingSnapshot } from "@/lib/marketing";
-import { commSnapshot } from "@/lib/communication";
-import { peopleSnapshot, salesSnapshot } from "@/lib/sales-people";
+import { businessHealth } from "@/lib/health";
 import { Signals } from "@/components/Signals";
 import { Stat } from "@/components/Stat";
-import type { Signal } from "@/lib/metrics-core";
+import { HealthGrid } from "@/components/HealthGrid";
 
 export default async function Overview() {
   const { workspace, user } = await requireWorkspace();
-  const [connections, money, marketing, comm, sales, people] = await Promise.all([
-    db.connection.findMany({ where: { workspaceId: workspace.id, status: { not: "disconnected" } } }),
-    moneySnapshot(workspace.id),
-    marketingSnapshot(workspace.id),
-    commSnapshot(workspace.id),
-    salesSnapshot(workspace.id),
-    peopleSnapshot(workspace.id),
-  ]);
-
-  const signals: Signal[] = [];
-  for (const c of connections.filter((c) => c.status === "error"))
-    signals.push({ severity: "critical", section: "connections", title: `${c.displayName} stopped syncing`, detail: c.lastError ?? "Reconnect it on the Connections page." });
-  signals.push(...money.signals, ...(marketing.hasData ? marketing.signals : []), ...comm.signals, ...sales.signals, ...people.signals);
-  // Worst first; keep "all good" lines only if nothing is wrong anywhere.
-  const rank = { critical: 0, warning: 1, good: 2 } as const;
-  signals.sort((a, b) => rank[a.severity] - rank[b.severity]);
-  const shown = signals.some((s) => s.severity !== "good") ? signals.filter((s) => s.severity !== "good") : signals;
+  const { connections, money, marketing, problems: shown, areas } = await businessHealth(workspace.id);
 
   return (
     <>
@@ -42,8 +22,11 @@ export default async function Overview() {
         </div>
       ) : (
         <>
-          <h2>Where you need to look</h2>
-          <Signals signals={shown} />
+          <h2>Your business at a glance</h2>
+          <HealthGrid areas={areas} />
+          <h2>Fix these first</h2>
+          <Signals signals={shown.slice(0, 5)} />
+          {shown.length > 5 && <p className="small muted">{shown.length - 5} more on the section pages.</p>}
           <h2>Money</h2>
           <div className="grid">
             <Stat label="Sales" cents={money.cur.sales} prevCents={money.prev.sales} currency={money.currency} />
