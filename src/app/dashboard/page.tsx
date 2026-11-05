@@ -3,22 +3,24 @@ import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/workspace";
 import { moneySnapshot } from "@/lib/metrics";
 import { marketingSnapshot } from "@/lib/marketing";
+import { commSnapshot } from "@/lib/communication";
 import { Signals } from "@/components/Signals";
 import { Stat } from "@/components/Stat";
 import type { Signal } from "@/lib/metrics-core";
 
 export default async function Overview() {
   const { workspace, user } = await requireWorkspace();
-  const [connections, money, marketing] = await Promise.all([
+  const [connections, money, marketing, comm] = await Promise.all([
     db.connection.findMany({ where: { workspaceId: workspace.id, status: { not: "disconnected" } } }),
     moneySnapshot(workspace.id),
     marketingSnapshot(workspace.id),
+    commSnapshot(workspace.id),
   ]);
 
   const signals: Signal[] = [];
   for (const c of connections.filter((c) => c.status === "error"))
     signals.push({ severity: "critical", section: "connections", title: `${c.displayName} stopped syncing`, detail: c.lastError ?? "Reconnect it on the Connections page." });
-  signals.push(...money.signals, ...(marketing.hasData ? marketing.signals : []));
+  signals.push(...money.signals, ...(marketing.hasData ? marketing.signals : []), ...comm.signals);
   // Worst first; keep "all good" lines only if nothing is wrong anywhere.
   const rank = { critical: 0, warning: 1, good: 2 } as const;
   signals.sort((a, b) => rank[a.severity] - rank[b.severity]);
@@ -58,7 +60,7 @@ export default async function Overview() {
             </>
           )}
           <p className="small muted" style={{ marginTop: 16 }}>
-            {connections.length} app{connections.length === 1 ? "" : "s"} connected. Communication, sales and payroll signals arrive as those apps are added.
+            {connections.length} app{connections.length === 1 ? "" : "s"} connected. Sales and payroll signals arrive as those apps are added.
           </p>
         </>
       )}

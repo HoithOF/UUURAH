@@ -165,3 +165,17 @@ export function adSignals(cur: AdRow[], prev: AdRow[], salesCur: number, salesPr
   if (out.length === 0) out.push({ severity: "good", section: "marketing", title: "Ads look healthy", detail: "No wasted campaigns and spend is keeping pace with sales." });
   return out;
 }
+
+export function commSignals(waiting: { receivedAt: Date; fromName: string | null; fromEmail: string | null }[], meetingHoursNext7: number, pendingInvites: number, now = new Date()): Signal[] {
+  const out: Signal[] = [];
+  const old = waiting.filter((m) => now.getTime() - m.receivedAt.getTime() > 24 * 3600_000);
+  if (old.length) {
+    const names = [...new Set(old.map((m) => m.fromName || m.fromEmail || "someone"))].slice(0, 3).join(", ");
+    out.push({ severity: old.length >= 5 ? "critical" : "warning", section: "communication", title: `${old.length} email${old.length === 1 ? "" : "s"} waiting over a day for a reply`, detail: `Including ${names}. Slow replies lose customers.` });
+  }
+  if (pendingInvites > 0)
+    out.push({ severity: "warning", section: "communication", title: `${pendingInvites} meeting invite${pendingInvites === 1 ? "" : "s"} not answered`, detail: "Accept or decline so people know if you're coming." });
+  if (meetingHoursNext7 >= 25)
+    out.push({ severity: "warning", section: "communication", title: `${Math.round(meetingHoursNext7)} hours of meetings this week`, detail: "That leaves little time to run the business." });
+  return out;
+}

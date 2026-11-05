@@ -37,6 +37,8 @@ model Workspace {
   transactions MoneyTransaction[]
   invoices     Invoice[]
   adMetrics    AdMetric[]
+  messages     Message[]
+  events       CalendarEvent[]
   oauthStates  OAuthState[]
 }
 
@@ -76,6 +78,8 @@ model Connection {
   invoices          Invoice[]
   balances          AccountBalance[]
   adMetrics         AdMetric[]
+  messages          Message[]
+  events            CalendarEvent[]
 
   @@unique([workspaceId, provider, externalAccountId])
   @@index([provider, externalAccountId])
@@ -184,4 +188,49 @@ model AdMetric {
 
   @@unique([workspaceId, source, campaignId, date])
   @@index([workspaceId, date])
+}
+
+// Recent email from connected mailboxes (headers and a short preview, not full bodies).
+model Message {
+  id          String      @id @default(cuid())
+  workspaceId String
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection  Connection  @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  source      String
+  externalId  String
+  threadId    String?
+  fromName    String?
+  fromEmail   String?
+  subject     String?
+  preview     String?
+  receivedAt  DateTime
+  isRead      Boolean     @default(false)
+  needsReply  Boolean     @default(false)
+  webLink     String?
+
+  @@unique([connectionId, externalId])
+  @@index([workspaceId, needsReply, receivedAt])
+}
+
+model CalendarEvent {
+  id          String     @id @default(cuid())
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection  Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  source      String
+  externalId  String
+  title       String
+  startsAt    DateTime
+  endsAt      DateTime
+  allDay      Boolean    @default(false)
+  location    String?
+  organizer   String?
+  myResponse  String? // accepted | tentative | declined | needsAction | organizer
+  attendees   Int        @default(0)
+  webLink     String?
+
+  @@unique([connectionId, externalId])
+  @@index([workspaceId, startsAt])
 }
