@@ -5,7 +5,7 @@ import { randomToken } from "@/lib/crypto";
 import { liveConnector } from "@/connectors/registry";
 import { appUrl } from "@/lib/url";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ provider: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
   const { workspace, user } = await requireWorkspace("admin");
   const connector = liveConnector(provider);
@@ -15,5 +15,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ provide
   const state = randomToken();
   await db.oAuthState.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 15 * 60_000) } } });
   await db.oAuthState.create({ data: { state, workspaceId: workspace.id, userId: user.id, provider } });
-  return NextResponse.redirect(connector.authorizeUrl(state, appUrl(`/api/connect/${provider}/callback`)));
+  let url: string;
+  try {
+    url = connector.authorizeUrl(state, appUrl(`/api/connect/${provider}/callback`), new URL(req.url).searchParams);
+  } catch {
+    return NextResponse.redirect(appUrl("/dashboard/connections?error=input"));
+  }
+  return NextResponse.redirect(url);
 }

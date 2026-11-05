@@ -69,6 +69,12 @@ Microsoft: register an app in Azure (any account type), add `<APP_URL>/api/conne
 `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET`. Google: the same OAuth client as Google Ads, with
 `<APP_URL>/api/connect/google-calendar/callback` added; enable the Calendar and Gmail APIs.
 
+## Connecting Shopify
+
+Create a public app in the Shopify Partner dashboard with scope `read_orders`, redirect URL `APP_URL/api/connect/shopify/callback`, and the `app/uninstalled` plus the three mandatory privacy webhooks pointed at `APP_URL/api/webhooks/shopify`. Owners type their store address and approve. Orders come in as sales and refunds (test orders and unpaid cancellations are skipped). The app uses expiring offline tokens that refresh, which Shopify requires for new public apps, and the GraphQL Admin API (`SHOPIFY_API_VERSION`, default 2026-10). `read_orders` reaches the last 60 days; ask Shopify for `read_all_orders` for older history.
+
+TikTok Ads is not built yet: its API docs couldn't be checked from here, and the connector shouldn't be written from memory.
+
 ## Connecting HubSpot and payroll
 
 HubSpot: create a public app, add `<APP_URL>/api/connect/hubspot/callback`, and set `HUBSPOT_CLIENT_ID` /

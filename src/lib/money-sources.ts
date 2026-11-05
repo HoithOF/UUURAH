@@ -1,10 +1,10 @@
 // Which app's numbers count for which kind of money, so the same sale isn't counted twice
 // when, say, Stripe and QuickBooks (which also records Stripe sales) are both connected. Pure.
 
-export const PAYMENTS = ["stripe", "square"];
+export const PAYMENTS = ["stripe", "square", "shopify"];
 export const ACCOUNTING = ["quickbooks", "xero"];
 export const BANK = ["plaid"];
-const NAMES: Record<string, string> = { stripe: "Stripe", square: "Square", quickbooks: "QuickBooks", xero: "Xero", plaid: "your bank", csv: "spreadsheet uploads" };
+const NAMES: Record<string, string> = { stripe: "Stripe", square: "Square", shopify: "Shopify", quickbooks: "QuickBooks", xero: "Xero", plaid: "your bank", csv: "spreadsheet uploads" };
 
 export type CountingRules = { sales: string[]; fees: string[]; expenses: string[]; note: string | null };
 
