@@ -1,0 +1,3 @@
+export function appUrl(path: string) {
+  return new URL(path, process.env.APP_URL ?? "http://localhost:3000").toString();
+}
