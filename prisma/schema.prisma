@@ -39,6 +39,9 @@ model Workspace {
   adMetrics    AdMetric[]
   messages     Message[]
   events       CalendarEvent[]
+  deals        Deal[]
+  payrollRuns  PayrollRun[]
+  employees    Employee[]
   oauthStates  OAuthState[]
 }
 
@@ -80,6 +83,9 @@ model Connection {
   adMetrics         AdMetric[]
   messages          Message[]
   events            CalendarEvent[]
+  deals             Deal[]
+  payrollRuns       PayrollRun[]
+  employees         Employee[]
 
   @@unique([workspaceId, provider, externalAccountId])
   @@index([provider, externalAccountId])
@@ -233,4 +239,61 @@ model CalendarEvent {
 
   @@unique([connectionId, externalId])
   @@index([workspaceId, startsAt])
+}
+
+model Deal {
+  id             String     @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId   String
+  connection     Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  source         String
+  externalId     String
+  name           String
+  amountCents    Int
+  currency       String
+  stage          String
+  isClosed       Boolean
+  isWon          Boolean
+  closeDate      DateTime?
+  openedAt       DateTime
+  lastActivityAt DateTime?
+  webLink        String?
+
+  @@unique([connectionId, externalId])
+  @@index([workspaceId, isClosed])
+}
+
+model PayrollRun {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  source       String
+  externalId   String
+  checkDate    DateTime
+  grossCents   Int
+  netCents     Int
+  people       Int
+  currency     String
+
+  @@unique([connectionId, externalId])
+  @@index([workspaceId, checkDate])
+}
+
+model Employee {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  externalId   String
+  name         String
+  title        String?
+  status       String // active | inactive | pending
+  startedAt    DateTime?
+  endedAt      DateTime?
+
+  @@unique([connectionId, externalId])
 }

@@ -4,6 +4,7 @@ import { CATALOG, SECTION_LABELS, type Section } from "@/connectors/catalog";
 import { liveConnector } from "@/connectors/registry";
 import { UploadForm } from "@/components/UploadForm";
 import { PlaidConnect } from "@/components/PlaidConnect";
+import { MergeConnect } from "@/components/MergeConnect";
 import { disconnect, syncNow } from "./actions";
 
 function ago(d: Date | null) {
@@ -76,7 +77,7 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
                   {a.id === "csv" ? null : !a.available ? (
                     <span className="badge">Wave {a.wave}</span>
                   ) : live?.isConfigured() && manage ? (
-                    live.connectVia === "plaid-link" ? <PlaidConnect /> : <a className="btn primary" href={`/api/connect/${a.id}/start`}>Connect {a.name}</a>
+                    live.connectVia === "plaid-link" ? <PlaidConnect /> : live.connectVia === "merge-link" ? <MergeConnect label="Connect payroll" /> : <a className="btn primary" href={`/api/connect/${a.id}/start`}>Connect {a.name}</a>
                   ) : (
                     <span className="badge" title="Add the API credentials in the server's environment">{manage ? "Needs server setup" : "Available"}</span>
                   )}

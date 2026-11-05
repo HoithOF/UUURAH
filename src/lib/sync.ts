@@ -60,13 +60,27 @@ export async function runSync(connectionId: string, trigger: "manual" | "webhook
       (await saveInvoices(connection.workspaceId, connection.id, connection.provider, result.invoices ?? [])) +
       (await saveAds(connection.workspaceId, connection.id, connection.provider, result.ads ?? [])) +
       (result.messages?.length ?? 0) +
-      (result.events?.length ?? 0);
+      (result.events?.length ?? 0) +
+      (result.deals?.length ?? 0) +
+      (result.payrollRuns?.length ?? 0) +
+      (result.employees?.length ?? 0);
     await saveBalances(connection.id, result.balances ?? []);
     if (result.messages) {
       const rows = result.messages;
       await db.$transaction([
         db.message.deleteMany({ where: { connectionId: connection.id } }),
         db.message.createMany({ data: rows.map((m) => ({ ...m, workspaceId: connection.workspaceId, connectionId: connection.id, source: connection.provider })) }),
+      ]);
+    }
+    for (const d of result.deals ?? [])
+      await db.deal.upsert({ where: { connectionId_externalId: { connectionId: connection.id, externalId: d.externalId } }, create: { ...d, workspaceId: connection.workspaceId, connectionId: connection.id, source: connection.provider }, update: d });
+    for (const r of result.payrollRuns ?? [])
+      await db.payrollRun.upsert({ where: { connectionId_externalId: { connectionId: connection.id, externalId: r.externalId } }, create: { ...r, workspaceId: connection.workspaceId, connectionId: connection.id, source: connection.provider }, update: r });
+    if (result.employees) {
+      const rows = result.employees;
+      await db.$transaction([
+        db.employee.deleteMany({ where: { connectionId: connection.id } }),
+        db.employee.createMany({ data: rows.map((e) => ({ ...e, workspaceId: connection.workspaceId, connectionId: connection.id })) }),
       ]);
     }
     if (result.events) {

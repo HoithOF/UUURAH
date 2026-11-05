@@ -9,6 +9,8 @@ import { googleAdsConnector } from "./google-ads";
 import { metaAdsConnector } from "./meta-ads";
 import { outlookConnector } from "./outlook";
 import { googleWorkspaceConnector } from "./google-workspace";
+import { hubspotConnector } from "./hubspot";
+import { mergeHrisConnector } from "./merge-hris";
 
 const LIVE: Record<string, LiveConnector> = {
   stripe: stripeConnector,
@@ -20,6 +22,8 @@ const LIVE: Record<string, LiveConnector> = {
   "meta-ads": metaAdsConnector,
   outlook: outlookConnector,
   "google-calendar": googleWorkspaceConnector,
+  hubspot: hubspotConnector,
+  "merge-hris": mergeHrisConnector,
 };
 
 export function liveConnector(id: string): LiveConnector | undefined {

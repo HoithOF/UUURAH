@@ -34,9 +34,9 @@ export const CATALOG: CatalogEntry[] = [
   { id: "google-calendar", name: "Google Calendar + Gmail send", section: "communication", method: "oauth", wave: 3, available: true, blurb: "Your schedule, accept or decline invites, and send email from Gmail." },
   { id: "twilio", name: "Phone and SMS", section: "communication", method: "built-in", wave: 3, available: false, blurb: "Call and text from the browser, with transcripts." },
 
-  { id: "hubspot", name: "HubSpot", section: "sales", method: "oauth", wave: 4, available: false, blurb: "Deals by stage and overdue follow-ups." },
+  { id: "hubspot", name: "HubSpot", section: "sales", method: "oauth", wave: 4, available: true, blurb: "Deals by stage and overdue follow-ups." },
   { id: "merge-crm", name: "Other CRMs (Salesforce, Pipedrive, Zoho...)", section: "sales", method: "unified-api", wave: 4, available: false, blurb: "One connection through Merge." },
-  { id: "merge-hris", name: "Payroll (Gusto, ADP, Rippling...)", section: "people", method: "unified-api", wave: 4, available: false, blurb: "Headcount, payroll cost and labor share of revenue." },
+  { id: "merge-hris", name: "Payroll (Gusto, ADP, Rippling...)", section: "people", method: "unified-api", wave: 4, available: true, blurb: "Headcount, payroll cost and labor share of revenue." },
   { id: "timesheets", name: "Timesheets (Homebase, Deputy...)", section: "people", method: "oauth", wave: 4, available: false, blurb: "Hours, overtime, scheduled vs. actual." },
 ];
 
