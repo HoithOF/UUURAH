@@ -81,8 +81,44 @@ export interface MappedEvent {
   webLink: string | null;
 }
 
+export interface MappedDeal {
+  externalId: string;
+  name: string;
+  amountCents: number;
+  currency: string;
+  stage: string;
+  isClosed: boolean;
+  isWon: boolean;
+  closeDate: Date | null;
+  openedAt: Date;
+  lastActivityAt: Date | null;
+  webLink: string | null;
+}
+
+export interface MappedPayrollRun {
+  externalId: string;
+  checkDate: Date;
+  grossCents: number;
+  netCents: number;
+  people: number;
+  currency: string;
+}
+
+export interface MappedEmployee {
+  externalId: string;
+  name: string;
+  title: string | null;
+  status: string;
+  startedAt: Date | null;
+  endedAt: Date | null;
+}
+
 export interface SyncResult {
   money: MappedMoney[];
+  deals?: MappedDeal[];
+  payrollRuns?: MappedPayrollRun[];
+  // When present, REPLACES the connection's stored employee list.
+  employees?: MappedEmployee[];
   // When present, these REPLACE the connection's stored messages / events (they are rolling windows).
   messages?: MappedMessage[];
   events?: MappedEvent[];
@@ -101,7 +137,8 @@ export interface LiveConnector {
   id: string;
   // "redirect": the standard OAuth round trip through /api/connect/<id>/start.
   // "plaid-link": Plaid's in-page Link widget (see components/PlaidConnect.tsx).
-  connectVia: "redirect" | "plaid-link";
+  // "merge-link": Merge's in-page Link widget (see components/MergeConnect.tsx).
+  connectVia: "redirect" | "plaid-link" | "merge-link";
   isConfigured(): boolean;
   authorizeUrl?(state: string, redirectUri: string): string;
   // `params` is the full callback query string (QuickBooks sends its company id there).

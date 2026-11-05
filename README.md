@@ -17,8 +17,12 @@ Plan and integration map: https://claude.ai/artifact/JXc4ywg8P81MYzE7KhFyKo
 - **Google Ads** and **Meta Ads** (OAuth): daily spend, clicks, conversions and conversion value per campaign; the last 7 days are re-read on every sync because platforms revise them
 - **Outlook / Microsoft 365** (Graph): the last 14 days of inbox headers and previews, "needs a reply" detection, the next 14 days of calendar; reply, send, and accept/maybe/decline from the dashboard
 - **Google Calendar + Gmail send**: calendar with accept/decline, and sending email from Gmail (send-only, so no paid Google security assessment is needed yet)
+- **HubSpot** (OAuth): every deal with stage labels, value, expected close date and last activity
+- **Payroll via Merge** (Gusto, ADP, Rippling, Paychex and more through one Merge Link connection): staff list, and payroll runs summed from each employee's gross and net pay
 - **Spreadsheet upload (CSV)**: detects date/amount/description/category columns, handles `$1,234.50`, `(45.00)`, debit/credit bank exports; re-uploading the same file does not double count
 - Money page (30-day totals, daily chart, transactions) and the first "where you need to look" signals on Overview
+- Sales page: open pipeline, won in 30 days, win rate, open deals with cold and overdue ones marked; signals for deals with no follow-up in 14 days, deals past close date, and a low win rate
+- People page: active staff, 30-day payroll, payroll as a share of sales, recent runs (totals only, and the staff list is hidden from regular members); signals for labor share of 35% or more and payroll outgrowing sales
 - Marketing page: spend, conversions, the platforms' claimed return next to the real one (all sales per ad dollar), campaign table, and signals for wasted campaigns, losing returns, spend outrunning sales and rising cost per conversion
 - Marketing, Communication, Sales and People pages list the apps coming in waves 2 to 4
 
@@ -64,6 +68,12 @@ Meta tokens last 60 days with no refresh, so owners are asked to reconnect when 
 Microsoft: register an app in Azure (any account type), add `<APP_URL>/api/connect/outlook/callback`, and set
 `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET`. Google: the same OAuth client as Google Ads, with
 `<APP_URL>/api/connect/google-calendar/callback` added; enable the Calendar and Gmail APIs.
+
+## Connecting HubSpot and payroll
+
+HubSpot: create a public app, add `<APP_URL>/api/connect/hubspot/callback`, and set `HUBSPOT_CLIENT_ID` /
+`HUBSPOT_CLIENT_SECRET`. Payroll: create a Merge account, enable the HRIS category and the providers you want,
+and set `MERGE_API_KEY`. Merge is paid per connected company.
 
 ## Scheduled sync
 

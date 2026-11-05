@@ -179,3 +179,58 @@ export function commSignals(waiting: { receivedAt: Date; fromName: string | null
     out.push({ severity: "warning", section: "communication", title: `${Math.round(meetingHoursNext7)} hours of meetings this week`, detail: "That leaves little time to run the business." });
   return out;
 }
+
+export interface DealLite { name: string; amountCents: number; isClosed: boolean; isWon: boolean; closeDate: Date | null; openedAt: Date; lastActivityAt: Date | null }
+
+export function salesSummary(deals: DealLite[], now = new Date()) {
+  const d30 = new Date(now.getTime() - 30 * 864e5);
+  const open = deals.filter((d) => !d.isClosed);
+  const closed30 = deals.filter((d) => d.isClosed && d.closeDate && d.closeDate >= d30 && d.closeDate <= now);
+  const won30 = closed30.filter((d) => d.isWon);
+  const stale = open.filter((d) => now.getTime() - (d.lastActivityAt ?? d.openedAt).getTime() > 14 * 864e5);
+  const pastClose = open.filter((d) => d.closeDate && d.closeDate < now);
+  return {
+    openCount: open.length,
+    pipeline: open.reduce((s, d) => s + d.amountCents, 0),
+    wonAmount30: won30.reduce((s, d) => s + d.amountCents, 0),
+    wonCount30: won30.length,
+    winRate30: closed30.length ? won30.length / closed30.length : null,
+    newDeals30: deals.filter((d) => d.openedAt >= d30).length,
+    stale,
+    pastClose,
+  };
+}
+
+export function salesSignals(s: ReturnType<typeof salesSummary>, currency = "USD"): Signal[] {
+  const out: Signal[] = [];
+  if (s.stale.length) {
+    const value = s.stale.reduce((t, d) => t + d.amountCents, 0);
+    out.push({ severity: s.stale.length >= 5 ? "critical" : "warning", section: "sales", title: `${s.stale.length} deal${s.stale.length === 1 ? "" : "s"} with no follow-up in 2 weeks`, detail: `${formatMoney(value, currency)} of pipeline is going cold. Biggest: ${[...s.stale].sort((a, b) => b.amountCents - a.amountCents).slice(0, 2).map((d) => d.name).join(", ")}.` });
+  }
+  if (s.pastClose.length)
+    out.push({ severity: "warning", section: "sales", title: `${s.pastClose.length} deal${s.pastClose.length === 1 ? " is" : "s are"} past the expected close date`, detail: "Update the close date or mark them won or lost so the forecast stays honest." });
+  if (s.winRate30 !== null && s.winRate30 < 0.2)
+    out.push({ severity: "warning", section: "sales", title: `You won ${Math.round(s.winRate30 * 100)}% of deals closed this month`, detail: "Most deals that reached a decision were lost." });
+  return out;
+}
+
+export interface PayrollLite { checkDate: Date; grossCents: number }
+
+export function peopleSummary(runs: PayrollLite[], activeHeadcount: number, salesCur: number, salesPrev: number, now = new Date()) {
+  const d30 = new Date(now.getTime() - 30 * 864e5);
+  const d60 = new Date(now.getTime() - 60 * 864e5);
+  const cur = runs.filter((r) => r.checkDate >= d30 && r.checkDate <= now).reduce((s, r) => s + r.grossCents, 0);
+  const prev = runs.filter((r) => r.checkDate >= d60 && r.checkDate < d30).reduce((s, r) => s + r.grossCents, 0);
+  return { headcount: activeHeadcount, payroll30: cur, payrollPrev30: prev, laborShare: salesCur > 0 && cur > 0 ? cur / salesCur : null, salesCur, salesPrev };
+}
+
+export function peopleSignals(p: ReturnType<typeof peopleSummary>): Signal[] {
+  const out: Signal[] = [];
+  if (p.laborShare !== null && p.laborShare >= 0.35)
+    out.push({ severity: p.laborShare >= 0.5 ? "critical" : "warning", section: "people", title: `Payroll is ${Math.round(p.laborShare * 100)}% of sales`, detail: "Most small service businesses aim for 20% to 35%." });
+  const payUp = pctChange(p.payroll30, p.payrollPrev30);
+  const salesUp = pctChange(p.salesCur, p.salesPrev);
+  if (payUp !== null && payUp >= 15 && (salesUp === null || payUp - salesUp >= 15))
+    out.push({ severity: "warning", section: "people", title: `Payroll up ${Math.round(payUp)}% while sales ${salesUp === null ? "are flat" : salesUp >= 0 ? `grew ${Math.round(salesUp)}%` : `fell ${Math.abs(Math.round(salesUp))}%`}`, detail: "Labor cost is growing faster than the money coming in." });
+  return out;
+}
