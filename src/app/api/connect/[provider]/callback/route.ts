@@ -23,11 +23,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   if (!state || state.provider !== provider || state.userId !== user.id || Date.now() - state.createdAt.getTime() > 15 * 60_000) return back("error=state");
 
   const connector = liveConnector(provider);
-  if (!connector?.isConfigured()) return back("error=config");
+  if (!connector?.exchangeCode || !connector.isConfigured()) return back("error=config");
 
   let result;
   try {
-    result = await connector.exchangeCode(code, appUrl(`/api/connect/${provider}/callback`));
+    result = await connector.exchangeCode(code, appUrl(`/api/connect/${provider}/callback`), url.searchParams);
   } catch (e) {
     console.error(`[connect:${provider}]`, e);
     return back("error=failed");

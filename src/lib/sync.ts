@@ -1,7 +1,9 @@
 import "server-only";
 import { db } from "./db";
 import { liveConnector } from "@/connectors/registry";
+import { tokenContext } from "./tokens";
 import type { MappedMoney } from "@/connectors/stripe-map";
+import type { MappedBalance, MappedInvoice } from "@/connectors/types";
 
 export async function saveMoney(workspaceId: string, connectionId: string | null, source: string, rows: MappedMoney[]) {
   let n = 0;
@@ -16,6 +18,23 @@ export async function saveMoney(workspaceId: string, connectionId: string | null
   return n;
 }
 
+export async function saveInvoices(workspaceId: string, connectionId: string, source: string, rows: MappedInvoice[]) {
+  for (const r of rows) {
+    await db.invoice.upsert({
+      where: { workspaceId_source_externalId: { workspaceId, source, externalId: r.externalId } },
+      create: { workspaceId, connectionId, source, ...r },
+      update: { ...r },
+    });
+  }
+  return rows.length;
+}
+
+export async function saveBalances(connectionId: string, rows: MappedBalance[]) {
+  for (const r of rows) {
+    await db.accountBalance.upsert({ where: { connectionId_accountId: { connectionId, accountId: r.accountId } }, create: { connectionId, ...r }, update: r });
+  }
+}
+
 // Pulls fresh data for one connection and records the run, success or failure.
 export async function runSync(connectionId: string, trigger: "manual" | "webhook" | "schedule") {
   const connection = await db.connection.findUniqueOrThrow({ where: { id: connectionId } });
@@ -23,12 +42,21 @@ export async function runSync(connectionId: string, trigger: "manual" | "webhook
   if (!connector) throw new Error(`No live connector for ${connection.provider}`);
   const run = await db.syncRun.create({ data: { connectionId, trigger, status: "running" } });
   try {
-    const result = await connector.sync(connection, connection.lastSyncedAt);
-    const n = await saveMoney(connection.workspaceId, connection.id, connection.provider, result.money);
+    const ctx = await tokenContext(connection, connector);
+    const result = await connector.sync(connection, connection.lastSyncedAt, ctx);
+    const n =
+      (await saveMoney(connection.workspaceId, connection.id, connection.provider, result.money)) +
+      (await saveInvoices(connection.workspaceId, connection.id, connection.provider, result.invoices ?? []));
+    await saveBalances(connection.id, result.balances ?? []);
+    if (result.removedMoneyIds?.length)
+      await db.moneyTransaction.deleteMany({ where: { workspaceId: connection.workspaceId, source: connection.provider, externalId: { in: result.removedMoneyIds } } });
     const now = new Date();
     await db.$transaction([
       db.syncRun.update({ where: { id: run.id }, data: { status: "success", itemsSynced: n, finishedAt: now } }),
-      db.connection.update({ where: { id: connectionId }, data: { lastSyncedAt: now, status: "connected", lastError: null } }),
+      db.connection.update({
+        where: { id: connectionId },
+        data: { lastSyncedAt: now, status: "connected", lastError: null, ...(result.cursor !== undefined ? { syncCursor: result.cursor } : {}) },
+      }),
     ]);
     return { ok: true as const, items: n };
   } catch (e) {

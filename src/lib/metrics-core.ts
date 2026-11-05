@@ -62,3 +62,53 @@ export function moneySignals(cur: PeriodTotals, prev: PeriodTotals): Signal[] {
 export function formatMoney(cents: number, currency = "USD") {
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: Math.abs(cents) >= 100000 ? 0 : 2 }).format(cents / 100);
 }
+
+export interface InvoiceLite { direction: string; balanceCents: number; dueAt: Date | null; contact: string | null }
+
+export function invoiceSummary(invoices: InvoiceLite[], now = new Date()) {
+  const open = invoices.filter((i) => i.balanceCents > 0);
+  const sum = (xs: InvoiceLite[]) => xs.reduce((s, i) => s + i.balanceCents, 0);
+  const overdue = (i: InvoiceLite) => i.dueAt !== null && i.dueAt < now;
+  const recv = open.filter((i) => i.direction === "receivable");
+  const pay = open.filter((i) => i.direction === "payable");
+  return {
+    owedToYou: sum(recv),
+    owedToYouOverdue: sum(recv.filter(overdue)),
+    overdueCustomers: recv.filter(overdue).length,
+    youOwe: sum(pay),
+    youOweOverdue: sum(pay.filter(overdue)),
+    billsDueSoon: sum(pay.filter((i) => i.dueAt && i.dueAt >= now && i.dueAt.getTime() - now.getTime() < 7 * 864e5)),
+  };
+}
+
+export function invoiceSignals(s: ReturnType<typeof invoiceSummary>, monthlySales: number, currency = "USD"): Signal[] {
+  const out: Signal[] = [];
+  if (s.owedToYouOverdue > 0) {
+    const big = monthlySales > 0 && s.owedToYouOverdue >= monthlySales * 0.25;
+    out.push({ severity: big ? "critical" : "warning", section: "money", title: `${formatMoney(s.owedToYouOverdue, currency)} in overdue invoices`, detail: `${s.overdueCustomers} customer invoice${s.overdueCustomers === 1 ? " is" : "s are"} past due. Chasing these is the fastest cash you can get.` });
+  }
+  if (s.youOweOverdue > 0)
+    out.push({ severity: "warning", section: "money", title: `${formatMoney(s.youOweOverdue, currency)} in overdue bills`, detail: "Late bills can mean late fees or unhappy suppliers." });
+  return out;
+}
+
+// Months of cash left at the last 30 days' burn. null = not burning cash.
+export function runwayMonths(cashCents: number, net30Cents: number): number | null {
+  if (net30Cents >= 0) return null;
+  return cashCents / -net30Cents;
+}
+
+export function cashSignals(cashCents: number, cardDebtCents: number, net30Cents: number, currency = "USD"): Signal[] {
+  const out: Signal[] = [];
+  const months = runwayMonths(cashCents, net30Cents);
+  if (months !== null && months < 6)
+    out.push({
+      severity: months < 3 ? "critical" : "warning",
+      section: "money",
+      title: months < 1 ? "Less than a month of cash left" : `About ${Math.floor(months)} month${Math.floor(months) === 1 ? "" : "s"} of cash left`,
+      detail: `At the last 30 days' pace you burn ${formatMoney(-net30Cents, currency)} a month against ${formatMoney(cashCents, currency)} in the bank.`,
+    });
+  if (cardDebtCents > 0 && cashCents > 0 && cardDebtCents > cashCents * 0.5)
+    out.push({ severity: "warning", section: "money", title: `${formatMoney(cardDebtCents, currency)} on credit cards`, detail: "That is more than half of your cash in the bank." });
+  return out;
+}

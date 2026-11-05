@@ -6,6 +6,7 @@ import { requireWorkspace } from "@/lib/workspace";
 import { runSync, saveMoney } from "@/lib/sync";
 import { parseMoneyCsv } from "@/connectors/csv-parse";
 import { liveConnector } from "@/connectors/registry";
+import { decrypt } from "@/lib/crypto";
 
 export type UploadState = { error?: string; message?: string } | undefined;
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -56,7 +57,7 @@ export async function disconnect(form: FormData) {
   const c = await db.connection.findFirst({ where: { id, workspaceId: workspace.id } });
   if (!c) return;
   try {
-    await liveConnector(c.provider)?.disconnect?.(c);
+    await liveConnector(c.provider)?.disconnect?.(c, { accessToken: c.accessTokenEnc ? decrypt(c.accessTokenEnc) : undefined });
   } catch {
     // Already revoked on their side; still forget it on ours.
   }

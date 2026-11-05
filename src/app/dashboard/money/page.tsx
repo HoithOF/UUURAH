@@ -8,13 +8,14 @@ import { Signals } from "@/components/Signals";
 import { Stat } from "@/components/Stat";
 
 const KIND_LABEL: Record<string, string> = { sale: "Sale", refund: "Refund", fee: "Fee", expense: "Expense", payout: "Payout" };
-const SOURCE_LABEL: Record<string, string> = { stripe: "Stripe", csv: "Spreadsheet" };
+const SOURCE_LABEL: Record<string, string> = { stripe: "Stripe", square: "Square", csv: "Spreadsheet", quickbooks: "QuickBooks", xero: "Xero", plaid: "Bank" };
 
 export default async function MoneyPage() {
   const { workspace } = await requireWorkspace();
-  const [money, recent] = await Promise.all([
+  const [money, recent, overdue] = await Promise.all([
     moneySnapshot(workspace.id),
     db.moneyTransaction.findMany({ where: { workspaceId: workspace.id }, orderBy: { occurredAt: "desc" }, take: 50 }),
+    db.invoice.findMany({ where: { workspaceId: workspace.id, direction: "receivable", balanceCents: { gt: 0 }, dueAt: { lt: new Date() } }, orderBy: { dueAt: "asc" }, take: 10 }),
   ]);
   const c = money.currency;
 
@@ -41,6 +42,60 @@ export default async function MoneyPage() {
 
       <h2>Money in vs. money out, per day</h2>
       <div className="card"><MoneyChart daily={money.daily} /></div>
+
+      {money.bank && (
+        <>
+          <h2>Cash in the bank</h2>
+          <div className="grid">
+            <Stat label="Cash on hand" cents={money.bank.cash} currency={c} />
+            <Stat label="Owed on cards" cents={money.bank.cardDebt} currency={c} />
+            <div className="card stat">
+              <div className="label">Runway</div>
+              <div className="value">{money.bank.runway === null ? "Not burning cash" : `${money.bank.runway.toFixed(1)} months`}</div>
+              <div className="small muted">At the last 30 days&apos; pace</div>
+            </div>
+          </div>
+          <table style={{ marginTop: 12 }}>
+            <thead><tr><th>Account</th><th>Type</th><th className="num">Balance</th></tr></thead>
+            <tbody>
+              {money.bank.accounts.map((a) => (
+                <tr key={a.id}><td>{a.name}</td><td>{a.type}</td><td className="num">{formatMoney(a.currentCents, a.currency)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {money.hasInvoices && (
+        <>
+          <h2>Invoices and bills</h2>
+          <div className="grid">
+            <Stat label="Customers owe you" cents={money.invoices.owedToYou} currency={c} />
+            <Stat label="Of that, overdue" cents={money.invoices.owedToYouOverdue} currency={c} />
+            <Stat label="You owe suppliers" cents={money.invoices.youOwe} currency={c} />
+            <Stat label="Bills due this week" cents={money.invoices.billsDueSoon} currency={c} />
+          </div>
+          {overdue.length > 0 && (
+            <>
+              <h2>Overdue customer invoices</h2>
+              <table>
+                <thead><tr><th>Customer</th><th>Invoice</th><th>Due</th><th className="num">Days late</th><th className="num">Still owed</th></tr></thead>
+                <tbody>
+                  {overdue.map((i) => (
+                    <tr key={i.id}>
+                      <td>{i.contact ?? "Unknown"}</td>
+                      <td>{i.number ?? "-"}</td>
+                      <td>{i.dueAt!.toISOString().slice(0, 10)}</td>
+                      <td className="num down">{Math.floor((Date.now() - i.dueAt!.getTime()) / 864e5)}</td>
+                      <td className="num">{formatMoney(i.balanceCents, i.currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </>
+      )}
 
       <h2>Signals</h2>
       <Signals signals={money.signals} />

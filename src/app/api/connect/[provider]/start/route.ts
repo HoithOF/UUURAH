@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ provide
   const { provider } = await params;
   const { workspace, user } = await requireWorkspace("admin");
   const connector = liveConnector(provider);
-  if (!connector) return NextResponse.redirect(appUrl("/dashboard/connections?error=unknown"));
+  if (!connector?.authorizeUrl) return NextResponse.redirect(appUrl("/dashboard/connections?error=unknown"));
   if (!connector.isConfigured()) return NextResponse.redirect(appUrl("/dashboard/connections?error=config"));
 
   const state = randomToken();
