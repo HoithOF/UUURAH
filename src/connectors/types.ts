@@ -55,8 +55,37 @@ export interface MappedAdDay {
   currency: string;
 }
 
+export interface MappedMessage {
+  externalId: string;
+  threadId: string | null;
+  fromName: string | null;
+  fromEmail: string | null;
+  subject: string | null;
+  preview: string | null;
+  receivedAt: Date;
+  isRead: boolean;
+  needsReply: boolean;
+  webLink: string | null;
+}
+
+export interface MappedEvent {
+  externalId: string;
+  title: string;
+  startsAt: Date;
+  endsAt: Date;
+  allDay: boolean;
+  location: string | null;
+  organizer: string | null;
+  myResponse: string | null;
+  attendees: number;
+  webLink: string | null;
+}
+
 export interface SyncResult {
   money: MappedMoney[];
+  // When present, these REPLACE the connection's stored messages / events (they are rolling windows).
+  messages?: MappedMessage[];
+  events?: MappedEvent[];
   ads?: MappedAdDay[];
   invoices?: MappedInvoice[];
   balances?: MappedBalance[];

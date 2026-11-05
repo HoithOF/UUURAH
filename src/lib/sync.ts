@@ -58,8 +58,24 @@ export async function runSync(connectionId: string, trigger: "manual" | "webhook
     const n =
       (await saveMoney(connection.workspaceId, connection.id, connection.provider, result.money)) +
       (await saveInvoices(connection.workspaceId, connection.id, connection.provider, result.invoices ?? [])) +
-      (await saveAds(connection.workspaceId, connection.id, connection.provider, result.ads ?? []));
+      (await saveAds(connection.workspaceId, connection.id, connection.provider, result.ads ?? [])) +
+      (result.messages?.length ?? 0) +
+      (result.events?.length ?? 0);
     await saveBalances(connection.id, result.balances ?? []);
+    if (result.messages) {
+      const rows = result.messages;
+      await db.$transaction([
+        db.message.deleteMany({ where: { connectionId: connection.id } }),
+        db.message.createMany({ data: rows.map((m) => ({ ...m, workspaceId: connection.workspaceId, connectionId: connection.id, source: connection.provider })) }),
+      ]);
+    }
+    if (result.events) {
+      const rows = result.events;
+      await db.$transaction([
+        db.calendarEvent.deleteMany({ where: { connectionId: connection.id } }),
+        db.calendarEvent.createMany({ data: rows.map((e) => ({ ...e, workspaceId: connection.workspaceId, connectionId: connection.id, source: connection.provider })) }),
+      ]);
+    }
     if (result.removedMoneyIds?.length)
       await db.moneyTransaction.deleteMany({ where: { workspaceId: connection.workspaceId, source: connection.provider, externalId: { in: result.removedMoneyIds } } });
     const now = new Date();

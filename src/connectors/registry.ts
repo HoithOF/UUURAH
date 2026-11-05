@@ -7,6 +7,8 @@ import { xeroConnector } from "./xero";
 import { plaidConnector } from "./plaid";
 import { googleAdsConnector } from "./google-ads";
 import { metaAdsConnector } from "./meta-ads";
+import { outlookConnector } from "./outlook";
+import { googleWorkspaceConnector } from "./google-workspace";
 
 const LIVE: Record<string, LiveConnector> = {
   stripe: stripeConnector,
@@ -16,6 +18,8 @@ const LIVE: Record<string, LiveConnector> = {
   plaid: plaidConnector,
   "google-ads": googleAdsConnector,
   "meta-ads": metaAdsConnector,
+  outlook: outlookConnector,
+  "google-calendar": googleWorkspaceConnector,
 };
 
 export function liveConnector(id: string): LiveConnector | undefined {

@@ -15,6 +15,8 @@ Plan and integration map: https://claude.ai/artifact/JXc4ywg8P81MYzE7KhFyKo
 - **Xero** (OAuth): bank transactions, invoice payments, invoices and bills
 - **Bank accounts via Plaid** (Link widget): transactions with incremental cursor sync, account balances, cash on hand and runway
 - **Google Ads** and **Meta Ads** (OAuth): daily spend, clicks, conversions and conversion value per campaign; the last 7 days are re-read on every sync because platforms revise them
+- **Outlook / Microsoft 365** (Graph): the last 14 days of inbox headers and previews, "needs a reply" detection, the next 14 days of calendar; reply, send, and accept/maybe/decline from the dashboard
+- **Google Calendar + Gmail send**: calendar with accept/decline, and sending email from Gmail (send-only, so no paid Google security assessment is needed yet)
 - **Spreadsheet upload (CSV)**: detects date/amount/description/category columns, handles `$1,234.50`, `(45.00)`, debit/credit bank exports; re-uploading the same file does not double count
 - Money page (30-day totals, daily chart, transactions) and the first "where you need to look" signals on Overview
 - Marketing page: spend, conversions, the platforms' claimed return next to the real one (all sales per ad dollar), campaign table, and signals for wasted campaigns, losing returns, spend outrunning sales and rising cost per conversion
@@ -57,6 +59,12 @@ and apply for a Google Ads API developer token (it starts with test-account acce
 with Facebook Login, add `<APP_URL>/api/connect/meta-ads/callback`, and request `ads_read` through app review.
 Meta tokens last 60 days with no refresh, so owners are asked to reconnect when one expires.
 
+## Connecting Outlook and Google Calendar
+
+Microsoft: register an app in Azure (any account type), add `<APP_URL>/api/connect/outlook/callback`, and set
+`MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET`. Google: the same OAuth client as Google Ads, with
+`<APP_URL>/api/connect/google-calendar/callback` added; enable the Calendar and Gmail APIs.
+
 ## Scheduled sync
 
 Apps without webhooks are refreshed by calling `POST /api/cron/sync` with `Authorization: Bearer $CRON_SECRET` every 15 to 30 minutes (Netlify scheduled function or any cron service).
@@ -90,3 +98,5 @@ Adding a new app = one file implementing `LiveConnector`, registered in `src/con
 - QuickBooks + Stripe can double count the same sale
 - No login rate limiting, password reset, or team invites yet (need an email provider)
 - Excel files must be saved as CSV first
+- Times on the Communication page are shown in UTC until each user has a time zone setting
+- Reading the Gmail inbox is not built (it needs Google's paid CASA assessment)

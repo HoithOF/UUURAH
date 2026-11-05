@@ -29,9 +29,9 @@ export const CATALOG: CatalogEntry[] = [
   { id: "social-organic", name: "Organic social", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Followers, reach and top posts across Instagram, TikTok and YouTube." },
   { id: "ga4", name: "Google Analytics", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Website visitors, sources and conversions." },
 
-  { id: "outlook", name: "Outlook mail and calendar", section: "communication", method: "oauth", wave: 3, available: false, blurb: "Inbox, unanswered customers, today's schedule." },
-  { id: "gmail", name: "Gmail", section: "communication", method: "oauth", wave: 3, available: false, blurb: "Send first, then the full inbox after Google's security review." },
-  { id: "google-calendar", name: "Google Calendar", section: "communication", method: "oauth", wave: 3, available: false, blurb: "Schedule and team availability." },
+  { id: "outlook", name: "Outlook mail and calendar", section: "communication", method: "oauth", wave: 3, available: true, blurb: "Unanswered emails, reply and send, your schedule, accept or decline invites." },
+  { id: "gmail", name: "Gmail inbox", section: "communication", method: "oauth", wave: 3, available: false, blurb: "Reading the inbox needs Google's paid security assessment. Sending works today through Google Calendar + Gmail." },
+  { id: "google-calendar", name: "Google Calendar + Gmail send", section: "communication", method: "oauth", wave: 3, available: true, blurb: "Your schedule, accept or decline invites, and send email from Gmail." },
   { id: "twilio", name: "Phone and SMS", section: "communication", method: "built-in", wave: 3, available: false, blurb: "Call and text from the browser, with transcripts." },
 
   { id: "hubspot", name: "HubSpot", section: "sales", method: "oauth", wave: 4, available: false, blurb: "Deals by stage and overdue follow-ups." },
