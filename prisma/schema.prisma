@@ -35,6 +35,7 @@ model Workspace {
   memberships  Membership[]
   connections  Connection[]
   transactions MoneyTransaction[]
+  invoices     Invoice[]
   oauthStates  OAuthState[]
 }
 
@@ -66,10 +67,13 @@ model Connection {
   tokenExpiresAt    DateTime?
   scopes            String?
   lastSyncedAt      DateTime?
+  syncCursor        String? // incremental-sync bookmark for apps that use one (Plaid)
   lastError         String?
   createdAt         DateTime   @default(now())
   syncRuns          SyncRun[]
   transactions      MoneyTransaction[]
+  invoices          Invoice[]
+  balances          AccountBalance[]
 
   @@unique([workspaceId, provider, externalAccountId])
   @@index([provider, externalAccountId])
@@ -117,4 +121,43 @@ model OAuthState {
   userId      String
   provider    String
   createdAt   DateTime  @default(now())
+}
+
+// Invoices and bills from accounting apps. direction: "receivable" (customers owe us)
+// or "payable" (we owe suppliers). balanceCents = what is still unpaid.
+model Invoice {
+  id           String      @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectionId String?
+  connection   Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  source       String
+  externalId   String
+  direction    String
+  number       String?
+  contact      String?
+  totalCents   Int
+  balanceCents Int
+  currency     String
+  issuedAt     DateTime
+  dueAt        DateTime?
+  status       String
+
+  @@unique([workspaceId, source, externalId])
+  @@index([workspaceId, direction, dueAt])
+}
+
+// Latest balance of each bank or card account, for cash on hand and runway.
+model AccountBalance {
+  id           String     @id @default(cuid())
+  connectionId String
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  accountId    String
+  name         String
+  type         String // depository | credit | loan | investment | other
+  currentCents Int
+  currency     String
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([connectionId, accountId])
 }

@@ -10,6 +10,10 @@ Plan and integration map: https://claude.ai/artifact/JXc4ywg8P81MYzE7KhFyKo
 - Notion-style sidebar: Overview, Money, Marketing, Communication, Sales, People, Connections, Settings
 - Connector engine: OAuth sign-in flow with CSRF state, encrypted token storage (AES-256-GCM), sync runs with history, webhooks, and a scheduled sync endpoint
 - **Stripe** (Stripe Connect, read-only): sales, refunds, fees and payouts; live updates through webhooks
+- **Square** (OAuth): completed payments by location, refunds, processing fees; tokens auto-refresh
+- **QuickBooks Online** (Intuit OAuth): payments received, sales receipts, refunds, purchases, bill payments, plus every invoice and bill with what's still unpaid
+- **Xero** (OAuth): bank transactions, invoice payments, invoices and bills
+- **Bank accounts via Plaid** (Link widget): transactions with incremental cursor sync, account balances, cash on hand and runway
 - **Spreadsheet upload (CSV)**: detects date/amount/description/category columns, handles `$1,234.50`, `(45.00)`, debit/credit bank exports; re-uploading the same file does not double count
 - Money page (30-day totals, daily chart, transactions) and the first "where you need to look" signals on Overview
 - Marketing, Communication, Sales and People pages list the apps coming in waves 2 to 4
@@ -32,6 +36,17 @@ Open http://localhost:3000, create an account, then go to Connections and upload
 2. Add `http://localhost:3000/api/connect/stripe/callback` (and your production URL) as a redirect URI.
 3. Set `STRIPE_CLIENT_ID` and `STRIPE_SECRET_KEY` in `.env`.
 4. For live updates, add a Connect webhook pointing to `/api/webhooks/stripe` and set `STRIPE_WEBHOOK_SECRET`.
+
+## Connecting Square, QuickBooks, Xero and Plaid
+
+Each needs a developer app on its platform; put the keys in `.env` (see `.env.example`) and register
+`<APP_URL>/api/connect/<square|quickbooks|xero>/callback` as the redirect URI. Plaid uses its in-page
+Link widget, so it needs no redirect URI. All four have sandboxes (`SQUARE_ENV`, `QUICKBOOKS_ENV`, `PLAID_ENV`).
+
+Bank transfers (including Stripe and Square payouts landing in the bank) are treated as neutral, so
+connecting both a payment app and a bank doesn't count the same sale twice. Connecting both QuickBooks
+and Stripe can still double count when Stripe sales are also recorded in QuickBooks; de-duplication is
+on the list.
 
 ## Scheduled sync
 
@@ -63,5 +78,6 @@ Adding a new app = one file implementing `LiveConnector`, registered in `src/con
 ## Known gaps (next)
 
 - Mixed currencies are summed as if they were one currency
+- QuickBooks + Stripe can double count the same sale
 - No login rate limiting, password reset, or team invites yet (need an email provider)
 - Excel files must be saved as CSV first

@@ -20,6 +20,7 @@ async function stripeFetch<T>(path: string, init: RequestInit & { account?: stri
 
 export const stripeConnector: LiveConnector = {
   id: "stripe",
+  connectVia: "redirect",
 
   isConfigured() {
     return Boolean(process.env.STRIPE_CLIENT_ID && process.env.STRIPE_SECRET_KEY);
@@ -41,7 +42,7 @@ export const stripeConnector: LiveConnector = {
     return { externalAccountId: token.stripe_user_id, displayName, scopes: token.scope };
   },
 
-  async sync(connection, since) {
+  async sync(connection, since, _ctx) {
     // Re-read a day of overlap so late updates are caught; upserts make it idempotent.
     const from = since ? Math.floor(since.getTime() / 1000) - 86400 : Math.floor(Date.now() / 1000) - 365 * 86400;
     const money: MappedMoney[] = [];
@@ -57,7 +58,7 @@ export const stripeConnector: LiveConnector = {
     return { money };
   },
 
-  async disconnect(connection) {
+  async disconnect(connection, _ctx) {
     await stripeFetch("https://connect.stripe.com/oauth/deauthorize", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },

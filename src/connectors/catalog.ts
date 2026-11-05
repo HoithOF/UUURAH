@@ -17,10 +17,10 @@ export interface CatalogEntry {
 export const CATALOG: CatalogEntry[] = [
   { id: "stripe", name: "Stripe", section: "money", method: "oauth", wave: 1, available: true, blurb: "Sales, refunds, fees and payouts, live through webhooks." },
   { id: "csv", name: "Spreadsheet upload (CSV)", section: "money", method: "upload", wave: 1, available: true, blurb: "Import spending, sales or labor you track in Excel. Save the sheet as CSV first." },
-  { id: "square", name: "Square", section: "money", method: "oauth", wave: 1, available: false, blurb: "Sales by location and item, staff hours and labor cost." },
-  { id: "quickbooks", name: "QuickBooks Online", section: "money", method: "oauth", wave: 1, available: false, blurb: "Profit and loss, unpaid invoices, bills and expenses." },
-  { id: "xero", name: "Xero", section: "money", method: "oauth", wave: 1, available: false, blurb: "Profit and loss, invoices and expenses." },
-  { id: "plaid", name: "Bank accounts (Plaid)", section: "money", method: "unified-api", wave: 1, available: false, blurb: "Balances, transactions and cash runway." },
+  { id: "square", name: "Square", section: "money", method: "oauth", wave: 1, available: true, blurb: "Sales by location, refunds and processing fees." },
+  { id: "quickbooks", name: "QuickBooks Online", section: "money", method: "oauth", wave: 1, available: true, blurb: "Profit and loss, unpaid invoices, bills and expenses." },
+  { id: "xero", name: "Xero", section: "money", method: "oauth", wave: 1, available: true, blurb: "Profit and loss, invoices and expenses." },
+  { id: "plaid", name: "Bank accounts (Plaid)", section: "money", method: "unified-api", wave: 1, available: true, blurb: "Balances, transactions and cash runway." },
   { id: "google-sheets", name: "Google Sheets", section: "money", method: "oauth", wave: 1, available: false, blurb: "Spreadsheets that stay up to date on their own." },
 
   { id: "google-ads", name: "Google Ads", section: "marketing", method: "oauth", wave: 2, available: false, blurb: "Spend, clicks, leads and return on ad spend." },
