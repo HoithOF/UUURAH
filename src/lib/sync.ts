@@ -3,7 +3,7 @@ import { db } from "./db";
 import { liveConnector } from "@/connectors/registry";
 import { tokenContext } from "./tokens";
 import type { MappedMoney } from "@/connectors/stripe-map";
-import type { MappedBalance, MappedInvoice } from "@/connectors/types";
+import type { MappedAdDay, MappedBalance, MappedInvoice } from "@/connectors/types";
 
 export async function saveMoney(workspaceId: string, connectionId: string | null, source: string, rows: MappedMoney[]) {
   let n = 0;
@@ -35,6 +35,17 @@ export async function saveBalances(connectionId: string, rows: MappedBalance[]) 
   }
 }
 
+export async function saveAds(workspaceId: string, connectionId: string, source: string, rows: MappedAdDay[]) {
+  for (const r of rows) {
+    await db.adMetric.upsert({
+      where: { workspaceId_source_campaignId_date: { workspaceId, source, campaignId: r.campaignId, date: r.date } },
+      create: { workspaceId, connectionId, source, ...r },
+      update: r,
+    });
+  }
+  return rows.length;
+}
+
 // Pulls fresh data for one connection and records the run, success or failure.
 export async function runSync(connectionId: string, trigger: "manual" | "webhook" | "schedule") {
   const connection = await db.connection.findUniqueOrThrow({ where: { id: connectionId } });
@@ -46,7 +57,8 @@ export async function runSync(connectionId: string, trigger: "manual" | "webhook
     const result = await connector.sync(connection, connection.lastSyncedAt, ctx);
     const n =
       (await saveMoney(connection.workspaceId, connection.id, connection.provider, result.money)) +
-      (await saveInvoices(connection.workspaceId, connection.id, connection.provider, result.invoices ?? []));
+      (await saveInvoices(connection.workspaceId, connection.id, connection.provider, result.invoices ?? [])) +
+      (await saveAds(connection.workspaceId, connection.id, connection.provider, result.ads ?? []));
     await saveBalances(connection.id, result.balances ?? []);
     if (result.removedMoneyIds?.length)
       await db.moneyTransaction.deleteMany({ where: { workspaceId: connection.workspaceId, source: connection.provider, externalId: { in: result.removedMoneyIds } } });

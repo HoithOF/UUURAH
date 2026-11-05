@@ -112,3 +112,56 @@ export function cashSignals(cashCents: number, cardDebtCents: number, net30Cents
     out.push({ severity: "warning", section: "money", title: `${formatMoney(cardDebtCents, currency)} on credit cards`, detail: "That is more than half of your cash in the bank." });
   return out;
 }
+
+export interface AdRow { source: string; campaignId: string; campaignName: string; date: Date; spendCents: number; impressions: number; clicks: number; conversions: number; conversionValueCents: number }
+
+export function adTotals(rows: AdRow[]) {
+  const t = { spend: 0, impressions: 0, clicks: 0, conversions: 0, value: 0 };
+  for (const r of rows) {
+    t.spend += r.spendCents; t.impressions += r.impressions; t.clicks += r.clicks; t.conversions += r.conversions; t.value += r.conversionValueCents;
+  }
+  return {
+    ...t,
+    costPerConversion: t.conversions > 0 ? t.spend / t.conversions : null,
+    roas: t.spend > 0 && t.value > 0 ? t.value / t.spend : null,
+    ctr: t.impressions > 0 ? t.clicks / t.impressions : null,
+  };
+}
+
+export function byCampaign(rows: AdRow[]) {
+  const map = new Map<string, AdRow[]>();
+  for (const r of rows) {
+    const k = `${r.source}|${r.campaignId}`;
+    map.set(k, [...(map.get(k) ?? []), r]);
+  }
+  return [...map.values()]
+    .map((rs) => ({ source: rs[0].source, campaignId: rs[0].campaignId, name: rs[rs.length - 1].campaignName, ...adTotals(rs) }))
+    .sort((a, b) => b.spend - a.spend);
+}
+
+// Marketing rules. `sales` are from the money section, so this is where ads meet revenue.
+export function adSignals(cur: AdRow[], prev: AdRow[], salesCur: number, salesPrev: number, currency = "USD"): Signal[] {
+  const out: Signal[] = [];
+  const c = adTotals(cur);
+  const p = adTotals(prev);
+  if (c.spend === 0) return out;
+  const wasted = byCampaign(cur).filter((x) => x.spend >= 10000 && x.conversions === 0);
+  if (wasted.length)
+    out.push({
+      severity: "warning",
+      section: "marketing",
+      title: `${formatMoney(wasted.reduce((s, x) => s + x.spend, 0), currency)} spent on ads with no results`,
+      detail: `${wasted.slice(0, 3).map((x) => x.name).join(", ")}${wasted.length > 3 ? ` and ${wasted.length - 3} more` : ""} got zero conversions in 30 days.`,
+    });
+  if (c.roas !== null && c.roas < 1)
+    out.push({ severity: "critical", section: "marketing", title: `Ads return ${formatMoney(Math.round(c.roas * 100), currency)} per $1 spent`, detail: "The platforms report less in sales than you paid for the ads." });
+  const spendUp = pctChange(c.spend, p.spend);
+  const salesUp = pctChange(salesCur, salesPrev);
+  if (spendUp !== null && spendUp >= 20 && salesUp !== null && salesUp < spendUp / 2)
+    out.push({ severity: "warning", section: "marketing", title: `Ad spend up ${Math.round(spendUp)}%, sales ${salesUp >= 0 ? `up only ${Math.round(salesUp)}%` : `down ${Math.abs(Math.round(salesUp))}%`}`, detail: "The extra ad money isn't showing up as sales." });
+  const cpcUp = c.costPerConversion !== null && p.costPerConversion !== null ? pctChange(c.costPerConversion, p.costPerConversion) : null;
+  if (cpcUp !== null && cpcUp >= 30)
+    out.push({ severity: "warning", section: "marketing", title: `Each conversion costs ${Math.round(cpcUp)}% more`, detail: `${formatMoney(Math.round(c.costPerConversion!), currency)} now vs. ${formatMoney(Math.round(p.costPerConversion!), currency)} before.` });
+  if (out.length === 0) out.push({ severity: "good", section: "marketing", title: "Ads look healthy", detail: "No wasted campaigns and spend is keeping pace with sales." });
+  return out;
+}

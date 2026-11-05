@@ -2,21 +2,27 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/workspace";
 import { moneySnapshot } from "@/lib/metrics";
+import { marketingSnapshot } from "@/lib/marketing";
 import { Signals } from "@/components/Signals";
 import { Stat } from "@/components/Stat";
 import type { Signal } from "@/lib/metrics-core";
 
 export default async function Overview() {
   const { workspace, user } = await requireWorkspace();
-  const [connections, money] = await Promise.all([
+  const [connections, money, marketing] = await Promise.all([
     db.connection.findMany({ where: { workspaceId: workspace.id, status: { not: "disconnected" } } }),
     moneySnapshot(workspace.id),
+    marketingSnapshot(workspace.id),
   ]);
 
   const signals: Signal[] = [];
   for (const c of connections.filter((c) => c.status === "error"))
     signals.push({ severity: "critical", section: "connections", title: `${c.displayName} stopped syncing`, detail: c.lastError ?? "Reconnect it on the Connections page." });
-  signals.push(...money.signals);
+  signals.push(...money.signals, ...(marketing.hasData ? marketing.signals : []));
+  // Worst first; keep "all good" lines only if nothing is wrong anywhere.
+  const rank = { critical: 0, warning: 1, good: 2 } as const;
+  signals.sort((a, b) => rank[a.severity] - rank[b.severity]);
+  const shown = signals.some((s) => s.severity !== "good") ? signals.filter((s) => s.severity !== "good") : signals;
 
   return (
     <>
@@ -32,15 +38,27 @@ export default async function Overview() {
       ) : (
         <>
           <h2>Where you need to look</h2>
-          <Signals signals={signals} />
+          <Signals signals={shown} />
           <h2>Money</h2>
           <div className="grid">
             <Stat label="Sales" cents={money.cur.sales} prevCents={money.prev.sales} currency={money.currency} />
             <Stat label="Spending" cents={money.cur.expenses} prevCents={money.prev.expenses} currency={money.currency} goodWhenUp={false} />
             <Stat label="Net" cents={money.cur.net} currency={money.currency} />
           </div>
+          {marketing.hasData && (
+            <>
+              <h2>Marketing</h2>
+              <div className="grid">
+                <Stat label="Ad spend" cents={marketing.cur.spend} prevCents={marketing.prev.spend} currency={marketing.currency} goodWhenUp={false} />
+                <div className="card stat">
+                  <div className="label">Sales per $1 of ads</div>
+                  <div className="value">{marketing.blendedReturn !== null ? `$${marketing.blendedReturn.toFixed(2)}` : "-"}</div>
+                </div>
+              </div>
+            </>
+          )}
           <p className="small muted" style={{ marginTop: 16 }}>
-            {connections.length} app{connections.length === 1 ? "" : "s"} connected. Marketing, communication, sales and payroll signals arrive as those apps are added.
+            {connections.length} app{connections.length === 1 ? "" : "s"} connected. Communication, sales and payroll signals arrive as those apps are added.
           </p>
         </>
       )}

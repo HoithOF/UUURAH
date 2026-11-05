@@ -14,8 +14,10 @@ Plan and integration map: https://claude.ai/artifact/JXc4ywg8P81MYzE7KhFyKo
 - **QuickBooks Online** (Intuit OAuth): payments received, sales receipts, refunds, purchases, bill payments, plus every invoice and bill with what's still unpaid
 - **Xero** (OAuth): bank transactions, invoice payments, invoices and bills
 - **Bank accounts via Plaid** (Link widget): transactions with incremental cursor sync, account balances, cash on hand and runway
+- **Google Ads** and **Meta Ads** (OAuth): daily spend, clicks, conversions and conversion value per campaign; the last 7 days are re-read on every sync because platforms revise them
 - **Spreadsheet upload (CSV)**: detects date/amount/description/category columns, handles `$1,234.50`, `(45.00)`, debit/credit bank exports; re-uploading the same file does not double count
 - Money page (30-day totals, daily chart, transactions) and the first "where you need to look" signals on Overview
+- Marketing page: spend, conversions, the platforms' claimed return next to the real one (all sales per ad dollar), campaign table, and signals for wasted campaigns, losing returns, spend outrunning sales and rising cost per conversion
 - Marketing, Communication, Sales and People pages list the apps coming in waves 2 to 4
 
 ## Run it locally
@@ -47,6 +49,13 @@ Bank transfers (including Stripe and Square payouts landing in the bank) are tre
 connecting both a payment app and a bank doesn't count the same sale twice. Connecting both QuickBooks
 and Stripe can still double count when Stripe sales are also recorded in QuickBooks; de-duplication is
 on the list.
+
+## Connecting Google Ads and Meta Ads
+
+Google: create an OAuth client in Google Cloud, add `<APP_URL>/api/connect/google-ads/callback` as a redirect URI,
+and apply for a Google Ads API developer token (it starts with test-account access only). Meta: create a Meta app
+with Facebook Login, add `<APP_URL>/api/connect/meta-ads/callback`, and request `ads_read` through app review.
+Meta tokens last 60 days with no refresh, so owners are asked to reconnect when one expires.
 
 ## Scheduled sync
 
