@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/workspace";
+import { fmtDate } from "@/lib/dates";
 import { moneySnapshot } from "@/lib/metrics";
 import { formatMoney } from "@/lib/metrics-core";
 import { MoneyChart } from "@/components/MoneyChart";
@@ -11,7 +12,7 @@ const KIND_LABEL: Record<string, string> = { sale: "Sale", refund: "Refund", fee
 const SOURCE_LABEL: Record<string, string> = { stripe: "Stripe", square: "Square", csv: "Spreadsheet", quickbooks: "QuickBooks", xero: "Xero", plaid: "Bank" };
 
 export default async function MoneyPage() {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user } = await requireWorkspace();
   const [money, recent, overdue] = await Promise.all([
     moneySnapshot(workspace.id),
     db.moneyTransaction.findMany({ where: { workspaceId: workspace.id }, orderBy: { occurredAt: "desc" }, take: 50 }),
@@ -32,6 +33,7 @@ export default async function MoneyPage() {
     <>
       <h1>Money</h1>
       <p className="muted">Last 30 days from every connected money app.</p>
+      {money.countingNote && <p className="small muted">{money.countingNote}</p>}
       <div className="grid" style={{ marginTop: 16 }}>
         <Stat label="Sales" cents={money.cur.sales} prevCents={money.prev.sales} currency={c} />
         <Stat label="Refunds" cents={money.cur.refunds} prevCents={money.prev.refunds} currency={c} goodWhenUp={false} />
@@ -85,7 +87,7 @@ export default async function MoneyPage() {
                     <tr key={i.id}>
                       <td>{i.contact ?? "Unknown"}</td>
                       <td>{i.number ?? "-"}</td>
-                      <td>{i.dueAt!.toISOString().slice(0, 10)}</td>
+                      <td>{fmtDate(i.dueAt!, user.timeZone)}</td>
                       <td className="num down">{Math.floor((Date.now() - i.dueAt!.getTime()) / 864e5)}</td>
                       <td className="num">{formatMoney(i.balanceCents, i.currency)}</td>
                     </tr>
@@ -106,7 +108,7 @@ export default async function MoneyPage() {
         <tbody>
           {recent.map((t) => (
             <tr key={t.id}>
-              <td>{t.occurredAt.toISOString().slice(0, 10)}</td>
+              <td>{fmtDate(t.occurredAt, user.timeZone)}</td>
               <td>{t.description ?? <span className="muted">No description</span>}{t.category && <div className="small muted">{t.category}</div>}</td>
               <td>{KIND_LABEL[t.kind] ?? t.kind}</td>
               <td>{SOURCE_LABEL[t.source] ?? t.source}</td>

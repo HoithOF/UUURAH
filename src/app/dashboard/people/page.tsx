@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/dates";
 import { requireWorkspace } from "@/lib/workspace";
 import { peopleSnapshot } from "@/lib/sales-people";
 import { formatMoney } from "@/lib/metrics-core";
@@ -6,7 +7,7 @@ import { Stat } from "@/components/Stat";
 import { EmptySection } from "@/components/EmptySection";
 
 export default async function PeoplePage() {
-  const { workspace, role } = await requireWorkspace();
+  const { workspace, role, user } = await requireWorkspace();
   const p = await peopleSnapshot(workspace.id);
   if (!p.hasData) return <EmptySection section="people" intro="Headcount, payroll cost and labor as a share of revenue." cta="Connect payroll" />;
   const c = p.currency;
@@ -31,7 +32,7 @@ export default async function PeoplePage() {
         <thead><tr><th>Pay date</th><th className="num">People paid</th><th className="num">Gross</th><th className="num">Net</th></tr></thead>
         <tbody>
           {p.runs.slice(0, 12).map((r) => (
-            <tr key={r.id}><td>{r.checkDate.toISOString().slice(0, 10)}</td><td className="num">{r.people}</td><td className="num">{formatMoney(r.grossCents, r.currency)}</td><td className="num">{formatMoney(r.netCents, r.currency)}</td></tr>
+            <tr key={r.id}><td>{fmtDate(r.checkDate, user.timeZone)}</td><td className="num">{r.people}</td><td className="num">{formatMoney(r.grossCents, r.currency)}</td><td className="num">{formatMoney(r.netCents, r.currency)}</td></tr>
           ))}
         </tbody>
       </table>
@@ -42,7 +43,7 @@ export default async function PeoplePage() {
             <thead><tr><th>Name</th><th>Title</th><th>Status</th><th>Started</th></tr></thead>
             <tbody>
               {p.employees.filter((e) => e.status !== "inactive").map((e) => (
-                <tr key={e.id}><td>{e.name}</td><td>{e.title ?? "-"}</td><td>{e.status}</td><td>{e.startedAt ? e.startedAt.toISOString().slice(0, 10) : "-"}</td></tr>
+                <tr key={e.id}><td>{e.name}</td><td>{e.title ?? "-"}</td><td>{e.status}</td><td>{e.startedAt ? fmtDate(e.startedAt, user.timeZone) : "-"}</td></tr>
               ))}
             </tbody>
           </table>

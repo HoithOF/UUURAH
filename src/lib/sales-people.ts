@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { moneyScope } from "./money-filter";
 import { inRange, peopleSignals, peopleSummary, salesSignals, salesSummary, totals } from "./metrics-core";
 
 export async function salesSnapshot(workspaceId: string, now = new Date()) {
@@ -15,7 +16,7 @@ export async function peopleSnapshot(workspaceId: string, now = new Date()) {
   const [runs, employees, sales] = await Promise.all([
     db.payrollRun.findMany({ where: { workspaceId }, orderBy: { checkDate: "desc" }, take: 52 }),
     db.employee.findMany({ where: { workspaceId }, orderBy: { name: "asc" } }),
-    db.moneyTransaction.findMany({ where: { workspaceId, kind: "sale", occurredAt: { gte: d60, lt: now } }, select: { kind: true, amountCents: true, occurredAt: true } }),
+    db.moneyTransaction.findMany({ where: { ...(await moneyScope(workspaceId)).where, kind: "sale", occurredAt: { gte: d60, lt: now } }, select: { kind: true, amountCents: true, occurredAt: true } }),
   ]);
   const active = employees.filter((e) => e.status === "active");
   const p = peopleSummary(runs, active.length, totals(inRange(sales, d30, now)).sales, totals(inRange(sales, d60, d30)).sales, now);

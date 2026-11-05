@@ -16,8 +16,9 @@ export interface CatalogEntry {
 
 export const CATALOG: CatalogEntry[] = [
   { id: "stripe", name: "Stripe", section: "money", method: "oauth", wave: 1, available: true, blurb: "Sales, refunds, fees and payouts, live through webhooks." },
-  { id: "csv", name: "Spreadsheet upload (CSV)", section: "money", method: "upload", wave: 1, available: true, blurb: "Import spending, sales or labor you track in Excel. Save the sheet as CSV first." },
+  { id: "csv", name: "Spreadsheet upload (Excel or CSV)", section: "money", method: "upload", wave: 1, available: true, blurb: "Import spending, sales or labor you track in Excel (.xlsx) or as CSV." },
   { id: "square", name: "Square", section: "money", method: "oauth", wave: 1, available: true, blurb: "Sales by location, refunds and processing fees." },
+  { id: "shopify", name: "Shopify", section: "money", method: "oauth", wave: 1, available: true, blurb: "Online store orders and refunds (last 60 days to start)." },
   { id: "quickbooks", name: "QuickBooks Online", section: "money", method: "oauth", wave: 1, available: true, blurb: "Profit and loss, unpaid invoices, bills and expenses." },
   { id: "xero", name: "Xero", section: "money", method: "oauth", wave: 1, available: true, blurb: "Profit and loss, invoices and expenses." },
   { id: "plaid", name: "Bank accounts (Plaid)", section: "money", method: "unified-api", wave: 1, available: true, blurb: "Balances, transactions and cash runway." },

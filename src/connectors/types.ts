@@ -140,10 +140,11 @@ export interface LiveConnector {
   // "merge-link": Merge's in-page Link widget (see components/MergeConnect.tsx).
   connectVia: "redirect" | "plaid-link" | "merge-link";
   isConfigured(): boolean;
-  authorizeUrl?(state: string, redirectUri: string): string;
+  // `params` is the start request's query string (Shopify sends the store's address there).
+  authorizeUrl?(state: string, redirectUri: string, params?: URLSearchParams): string;
   // `params` is the full callback query string (QuickBooks sends its company id there).
   exchangeCode?(code: string, redirectUri: string, params: URLSearchParams): Promise<OAuthResult>;
-  refresh?(refreshToken: string): Promise<TokenSet>;
+  refresh?(refreshToken: string, connection: Connection): Promise<TokenSet>;
   sync(connection: Connection, since: Date | null, ctx: SyncContext): Promise<SyncResult>;
   disconnect?(connection: Connection, ctx: SyncContext): Promise<void>;
 }

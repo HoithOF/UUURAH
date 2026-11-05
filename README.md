@@ -69,6 +69,12 @@ Microsoft: register an app in Azure (any account type), add `<APP_URL>/api/conne
 `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET`. Google: the same OAuth client as Google Ads, with
 `<APP_URL>/api/connect/google-calendar/callback` added; enable the Calendar and Gmail APIs.
 
+## Connecting Shopify
+
+Create a public app in the Shopify Partner dashboard with scope `read_orders`, redirect URL `APP_URL/api/connect/shopify/callback`, and the `app/uninstalled` plus the three mandatory privacy webhooks pointed at `APP_URL/api/webhooks/shopify`. Owners type their store address and approve. Orders come in as sales and refunds (test orders and unpaid cancellations are skipped). The app uses expiring offline tokens that refresh, which Shopify requires for new public apps, and the GraphQL Admin API (`SHOPIFY_API_VERSION`, default 2026-10). `read_orders` reaches the last 60 days; ask Shopify for `read_all_orders` for older history.
+
+TikTok Ads is not built yet: its API docs couldn't be checked from here, and the connector shouldn't be written from memory.
+
 ## Connecting HubSpot and payroll
 
 HubSpot: create a public app, add `<APP_URL>/api/connect/hubspot/callback`, and set `HUBSPOT_CLIENT_ID` /
@@ -83,6 +89,14 @@ and set `MERGE_API_KEY`. Merge is paid per connected company.
 - Login, signup, reset and invite limits per email and per IP (`RateHit` table).
 - All one-time links store only a sha256 of the token (`AuthToken` table).
 - Email goes through Resend (`RESEND_API_KEY`, `EMAIL_FROM`). In development, or with `EMAIL_TRANSPORT=log`, emails are printed to the server log.
+
+## Getting the numbers right
+
+- **No double counting.** When apps overlap, each kind of money comes from one place: sales, refunds and fees from the payment app (Stripe, Square) if there is one, otherwise accounting, otherwise the bank; spending from accounting (QuickBooks, Xero) if there is one, otherwise the bank. Spreadsheet uploads always count. The Money page says which apps it used (`src/lib/money-sources.ts`).
+- **One currency.** Totals use the currency most of the money is in; anything in other currencies is left out and the Money page says how many.
+- **Time zones.** Each person picks theirs in Settings; every date and time, and alert timing, follows it.
+- **Excel.** `.xlsx` files import directly (first sheet with data), as well as CSV.
+- **Saved chats.** Ask keeps each person's conversations; history is read from the database, not the browser.
 
 ## Alerts, phone and billing
 
@@ -138,10 +152,5 @@ Adding a new app = one file implementing `LiveConnector`, registered in `src/con
 
 ## Known gaps (next)
 
-- Mixed currencies are summed as if they were one currency
-- QuickBooks + Stripe can double count the same sale
-- Excel files must be saved as CSV first
-- Times on the Communication page are shown in UTC until each user has a time zone setting
 - Reading the Gmail inbox is not built (it needs Google's paid CASA assessment)
 - The MCP endpoint takes access keys, not OAuth, so Claude.ai custom connectors can't use it yet (Claude Code and other header-capable MCP apps can)
-- The assistant doesn't keep chat history between page loads

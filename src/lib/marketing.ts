@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { moneyScope } from "./money-filter";
 import { adSignals, adTotals, byCampaign, inRange, totals } from "./metrics-core";
 
 export async function marketingSnapshot(workspaceId: string, now = new Date()) {
@@ -7,7 +8,7 @@ export async function marketingSnapshot(workspaceId: string, now = new Date()) {
   const prevStart = new Date(start.getTime() - 30 * 864e5);
   const [ads, sales] = await Promise.all([
     db.adMetric.findMany({ where: { workspaceId, date: { gte: prevStart, lt: now } } }),
-    db.moneyTransaction.findMany({ where: { workspaceId, kind: "sale", occurredAt: { gte: prevStart, lt: now } }, select: { kind: true, amountCents: true, occurredAt: true } }),
+    db.moneyTransaction.findMany({ where: { ...(await moneyScope(workspaceId)).where, kind: "sale", occurredAt: { gte: prevStart, lt: now } }, select: { kind: true, amountCents: true, occurredAt: true } }),
   ]);
   const cur = ads.filter((a) => a.date >= start);
   const prev = ads.filter((a) => a.date < start);

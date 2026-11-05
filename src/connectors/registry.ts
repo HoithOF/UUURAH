@@ -11,6 +11,7 @@ import { outlookConnector } from "./outlook";
 import { googleWorkspaceConnector } from "./google-workspace";
 import { hubspotConnector } from "./hubspot";
 import { mergeHrisConnector } from "./merge-hris";
+import { shopifyConnector } from "./shopify";
 
 const LIVE: Record<string, LiveConnector> = {
   stripe: stripeConnector,
@@ -24,6 +25,7 @@ const LIVE: Record<string, LiveConnector> = {
   "google-calendar": googleWorkspaceConnector,
   hubspot: hubspotConnector,
   "merge-hris": mergeHrisConnector,
+  shopify: shopifyConnector,
 };
 
 export function liveConnector(id: string): LiveConnector | undefined {

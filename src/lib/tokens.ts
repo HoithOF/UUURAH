@@ -15,7 +15,7 @@ export async function tokenContext(connection: Connection, connector: LiveConnec
   const expiring = connection.tokenExpiresAt && connection.tokenExpiresAt.getTime() - Date.now() < REFRESH_WINDOW_MS;
   if (!expiring || !connector.refresh || !connection.refreshTokenEnc) return { accessToken: decrypt(connection.accessTokenEnc), cursor };
 
-  const t = await connector.refresh(decrypt(connection.refreshTokenEnc));
+  const t = await connector.refresh(decrypt(connection.refreshTokenEnc), connection);
   await db.connection.update({
     where: { id: connection.id },
     data: {

@@ -21,6 +21,7 @@ const ERRORS: Record<string, string> = {
   state: "That sign-in link expired. Try connecting again.",
   config: "This app isn't set up on the server yet (missing API credentials).",
   failed: "The app refused the connection. Try again in a minute.",
+  input: "Check the store address and try again.",
 };
 
 export default async function ConnectionsPage({ searchParams }: { searchParams: Promise<{ error?: string; connected?: string }> }) {
@@ -77,7 +78,12 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
                   {a.id === "csv" ? null : !a.available ? (
                     <span className="badge">Wave {a.wave}</span>
                   ) : live?.isConfigured() && manage ? (
-                    live.connectVia === "plaid-link" ? <PlaidConnect /> : live.connectVia === "merge-link" ? <MergeConnect label="Connect payroll" /> : <a className="btn primary" href={`/api/connect/${a.id}/start`}>Connect {a.name}</a>
+                    a.id === "shopify" ? (
+                      <form action="/api/connect/shopify/start" method="get" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <input name="shop" type="text" placeholder="your-store.myshopify.com" required aria-label="Shopify store address" style={{ width: 220 }} />
+                        <button className="btn primary">Connect Shopify</button>
+                      </form>
+                    ) : live.connectVia === "plaid-link" ? <PlaidConnect /> : live.connectVia === "merge-link" ? <MergeConnect label="Connect payroll" /> : <a className="btn primary" href={`/api/connect/${a.id}/start`}>Connect {a.name}</a>
                   ) : (
                     <span className="badge" title="Add the API credentials in the server's environment">{manage ? "Needs server setup" : "Available"}</span>
                   )}

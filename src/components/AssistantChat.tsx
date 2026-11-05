@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-type Turn = { role: "user" | "assistant"; content: string; notice?: string };
+export type Turn = { role: "user" | "assistant"; content: string; notice?: string };
 
 const TOOL_LABELS: Record<string, string> = {
   business_health: "Checking every area",
@@ -22,8 +22,9 @@ const STARTERS = [
   "Who do I need to get back to today?",
 ];
 
-export function AssistantChat({ ready }: { ready: boolean }) {
-  const [turns, setTurns] = useState<Turn[]>([]);
+export function AssistantChat({ ready, chatId: initialChatId, initialTurns = [] }: { ready: boolean; chatId?: string; initialTurns?: Turn[] }) {
+  const [turns, setTurns] = useState<Turn[]>(initialTurns);
+  const chatId = useRef<string | undefined>(initialChatId);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export function AssistantChat({ ready }: { ready: boolean }) {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.slice(-20).map(({ role, content }) => ({ role, content })) }),
+        body: JSON.stringify({ chatId: chatId.current, message: q }),
         signal: abort.current.signal,
       });
       if (!res.ok || !res.body) {
@@ -62,7 +63,10 @@ export function AssistantChat({ ready }: { ready: boolean }) {
         for (const line of lines) {
           if (!line) continue;
           const e = JSON.parse(line);
-          if (e.type === "text") { setStatus(null); update((t) => ({ ...t, content: t.content + e.text })); }
+          if (e.type === "chat") {
+            if (!chatId.current) window.history.replaceState(null, "", `/dashboard/assistant?chat=${e.id}`);
+            chatId.current = e.id;
+          } else if (e.type === "text") { setStatus(null); update((t) => ({ ...t, content: t.content + e.text })); }
           else if (e.type === "tool") setStatus(TOOL_LABELS[e.name] ?? "Looking things up");
           else if (e.type === "notice" || e.type === "error") update((t) => ({ ...t, notice: e.text }));
         }

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { fmtDate } from "@/lib/dates";
 import { canManage, requireWorkspace } from "@/lib/workspace";
 import { appUrl } from "@/lib/url";
 import { AccessKeyForm } from "@/components/AccessKeyForm";
@@ -130,7 +131,7 @@ export default async function SettingsPage() {
               <tr key={k.id}>
                 <td>{k.name}</td>
                 <td><code>...{k.lastFour}</code></td>
-                <td>{k.lastUsedAt ? k.lastUsedAt.toISOString().slice(0, 10) : "Never"}</td>
+                <td>{k.lastUsedAt ? fmtDate(k.lastUsedAt, user.timeZone) : "Never"}</td>
                 <td>{manage && <form action={revokeKey}><input type="hidden" name="id" value={k.id} /><button className="btn">Turn off</button></form>}</td>
               </tr>
             ))}
