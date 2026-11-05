@@ -87,6 +87,9 @@ model Membership {
   userId      String
   workspaceId String
   role        String
+  // Email alerts about this company: off | daily | weekly.
+  alertFrequency  String    @default("weekly")
+  alertLastSentAt DateTime?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())

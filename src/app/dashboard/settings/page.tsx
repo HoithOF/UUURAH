@@ -4,12 +4,13 @@ import { appUrl } from "@/lib/url";
 import { AccessKeyForm } from "@/components/AccessKeyForm";
 import { SimpleForm } from "@/components/SimpleForm";
 import { TwoStepSetup } from "@/components/TwoStepSetup";
-import { changePassword, changeRole, deleteCompany, deleteMyAccount, transferOwnership, disableTwoStep, inviteMember, removeMember, revokeInvite, revokeKey, setTimeZone, signOutOthers } from "./actions";
+import { setAlerts, changePassword, changeRole, deleteCompany, deleteMyAccount, transferOwnership, disableTwoStep, inviteMember, removeMember, revokeInvite, revokeKey, setTimeZone, signOutOthers } from "./actions";
 
 const ZONES = ["UTC", ...Intl.supportedValuesOf("timeZone")];
 
 export default async function SettingsPage() {
-  const { user, workspace, role } = await requireWorkspace();
+  const { user, workspace, role, memberships } = await requireWorkspace();
+  const me = memberships.find((m) => m.workspaceId === workspace.id)!;
   const [members, keys, invites] = await Promise.all([
     db.membership.findMany({ where: { workspaceId: workspace.id }, include: { user: true }, orderBy: { createdAt: "asc" } }),
     db.accessKey.findMany({ where: { workspaceId: workspace.id, revokedAt: null }, orderBy: { createdAt: "desc" } }),
@@ -20,7 +21,7 @@ export default async function SettingsPage() {
     <>
       <h1>Settings</h1>
       <p className="muted">{workspace.name} · you are {role === "owner" ? "the owner" : `an ${role}`}</p>
-      <h2>Your account</h2>
+      <h2 id="alerts">Your account</h2>
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start" }}>
         <SimpleForm action={setTimeZone} submit="Save" className="card">
           <label htmlFor="tz" style={{ marginTop: 0 }}>Time zone</label>
@@ -50,6 +51,15 @@ export default async function SettingsPage() {
             </>
           )}
         </div>
+        <SimpleForm action={setAlerts} submit="Save" className="card">
+          <label htmlFor="alerts" style={{ marginTop: 0 }} id="alerts-label">Email alerts for {workspace.name}</label>
+          <select id="alerts" name="frequency" defaultValue={me.alertFrequency} className="btn" style={{ width: "100%" }}>
+            <option value="daily">Daily, only when something needs attention</option>
+            <option value="weekly">Weekly summary, Monday morning</option>
+            <option value="off">Off</option>
+          </select>
+          <p className="small muted">Sent around 7am your time{user.emailVerifiedAt ? "" : ", once you confirm your email"}.</p>
+        </SimpleForm>
         <SimpleForm action={signOutOthers} submit="Sign out other devices" className="card">
           <div style={{ fontWeight: 600 }}>Devices</div>
           <p className="small">Signs you out everywhere except this browser.</p>
