@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspace } from "@/lib/workspace";
 import { createAccessKey } from "@/lib/access-keys";
@@ -141,4 +142,54 @@ export async function changePassword(_: FormState, form: FormData): Promise<Form
   await db.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(next, 12) } });
   await destroyOtherSessions(user.id);
   return { ok: "Password changed. Other devices were signed out." };
+}
+// ---- Danger zone ----
+
+export async function deleteCompany(_: FormState, form: FormData): Promise<FormState> {
+  const { user, workspace } = await requireWorkspace("owner");
+  if (String(form.get("confirm") ?? "").trim() !== workspace.name) return { error: `Type "${workspace.name}" exactly to confirm.` };
+  if (!(await bcrypt.compare(String(form.get("password") ?? ""), user.passwordHash))) return { error: "That password isn't right." };
+  // Revoke what we can on the apps' side first; ignore failures (the tokens are deleted regardless).
+  const conns = await db.connection.findMany({ where: { workspaceId: workspace.id } });
+  const { liveConnector } = await import("@/connectors/registry");
+  await Promise.allSettled(conns.map((c) => liveConnector(c.provider)?.disconnect?.(c, { accessToken: c.accessTokenEnc ? decrypt(c.accessTokenEnc) : undefined })));
+  await db.$transaction([
+    db.moneyTransaction.deleteMany({ where: { workspaceId: workspace.id } }),
+    db.invoice.deleteMany({ where: { workspaceId: workspace.id } }),
+    db.adMetric.deleteMany({ where: { workspaceId: workspace.id } }),
+    db.authToken.deleteMany({ where: { workspaceId: workspace.id } }),
+    db.workspace.delete({ where: { id: workspace.id } }),
+  ]);
+  const left = await db.membership.count({ where: { userId: user.id } });
+  if (left === 0) {
+    await db.user.delete({ where: { id: user.id } });
+    redirect("/");
+  }
+  redirect("/dashboard");
+}
+
+export async function deleteMyAccount(_: FormState, form: FormData): Promise<FormState> {
+  const user = await requireUser();
+  if (!(await bcrypt.compare(String(form.get("password") ?? ""), user.passwordHash))) return { error: "That password isn't right." };
+  const owned = await db.membership.findMany({ where: { userId: user.id, role: "owner" }, include: { workspace: { include: { _count: { select: { memberships: true } } } } } });
+  const shared = owned.filter((m) => m.workspace._count.memberships > 1);
+  if (shared.length) return { error: `You own ${shared.map((m) => m.workspace.name).join(", ")}, which has other people in it. Make someone else the owner or delete the company first.` };
+  if (owned.length) return { error: `Delete ${owned.map((m) => m.workspace.name).join(", ")} first (Settings → Delete this company). That also deletes your login.` };
+  await db.authToken.deleteMany({ where: { OR: [{ userId: user.id }, { email: user.email }] } });
+  await db.accessKey.deleteMany({ where: { userId: user.id } });
+  await db.user.delete({ where: { id: user.id } });
+  redirect("/");
+}
+
+export async function transferOwnership(_: FormState, form: FormData): Promise<FormState> {
+  const { user, workspace } = await requireWorkspace("owner");
+  const to = await db.membership.findFirst({ where: { id: String(form.get("membershipId")), workspaceId: workspace.id, userId: { not: user.id } } });
+  if (!to) return { error: "Pick someone on the team." };
+  if (!(await bcrypt.compare(String(form.get("password") ?? ""), user.passwordHash))) return { error: "That password isn't right." };
+  await db.$transaction([
+    db.membership.update({ where: { id: to.id }, data: { role: "owner" } }),
+    db.membership.updateMany({ where: { workspaceId: workspace.id, userId: user.id }, data: { role: "admin" } }),
+  ]);
+  revalidatePath("/dashboard", "layout");
+  return { ok: "Ownership moved. You're now an admin." };
 }

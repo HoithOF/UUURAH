@@ -129,3 +129,22 @@ input[type=text], input[type=email], input[type=password] { width: 100%; padding
 .ask textarea { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; resize: vertical; }
 .note { background: var(--good-soft); color: var(--good); padding: 8px 12px; border-radius: 8px; font-size: 14px; margin: 12px 0; }
 .banner { background: var(--warn-soft); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+
+/* Public site */
+.public { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+.pub-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; gap: 12px; }
+.pub-head nav { display: flex; gap: 14px; align-items: center; }
+.brandlink { font-weight: 700; font-size: 17px; color: var(--text); }
+.hero { padding: 56px 0 32px; max-width: 760px; }
+.hero h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.12; margin-bottom: 16px; letter-spacing: -0.02em; }
+.lede { font-size: 18px; color: var(--muted); max-width: 640px; }
+.cta { display: flex; gap: 10px; margin: 24px 0 10px; flex-wrap: wrap; }
+.btn.big { padding: 11px 20px; font-size: 16px; }
+.pub-section { padding: 20px 0; }
+.pub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--border); background: var(--panel); border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+.pub-foot { display: flex; gap: 18px; flex-wrap: wrap; border-top: 1px solid var(--border); padding: 20px 0 40px; margin-top: 40px; font-size: 13px; color: var(--muted); }
+.legal { max-width: 720px; padding-bottom: 20px; }
+.legal li { margin-bottom: 6px; }
+.card.danger { border-color: var(--bad-soft); } .card.danger .btn.primary { background: var(--bad); border-color: var(--bad); }
